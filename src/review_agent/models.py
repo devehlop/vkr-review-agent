@@ -37,3 +37,32 @@ class CleanReport:
     duplicates: int = 0
     kept: int = 0
     notes: list[str] = field(default_factory=list)
+
+
+@dataclass
+class Issue:
+    """Проблема товара: группа близких негативных упоминаний одного атрибута (шаг 6)."""
+
+    id: int
+    product: str
+    attribute: str
+    title: str
+    sentence_ids: list[int]
+    coverage: float = 0.0  # доля отзывов товара, в которых встречается проблема
+    neg_share: float = 0.0  # доля негатива по атрибуту
+    rarer_at_competitors: bool = False  # у конкурентов встречается заметно реже
+
+
+@dataclass
+class Recommendation:
+    """Рекомендация продавцу (шаги 8–11)."""
+
+    id: int
+    issue_id: int
+    action: str
+    type: str  # товар, упаковка, карточка товара, размерная сетка, логистика
+    rationale: str
+    effort: int  # сложность исправления: 1 просто, 3 сложно
+    quotes: list[tuple[int, str]] = field(default_factory=list)  # (номер предложения, цитата)
+    priority: float = 0.0
+    grounded: bool = False
