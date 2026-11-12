@@ -12,6 +12,11 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 MODEL_NAMES = ("gigachat", "yandex", "qwen")
 
 
+def load_prompt(name: str) -> str:
+    """Читает промпт из файла. Имя файла содержит номер версии, например «extract_v1» (NFR-5)."""
+    return (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8")
+
+
 def load_env(path: Path | None = None) -> None:
     """Читает файл .env (строки ВИДА=значение). Уже заданные переменные не перезаписывает."""
     path = path or ROOT / ".env"

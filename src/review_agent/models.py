@@ -66,3 +66,15 @@ class Recommendation:
     quotes: list[tuple[int, str]] = field(default_factory=list)  # (номер предложения, цитата)
     priority: float = 0.0
     grounded: bool = False
+    expected_effect: str = ""
+
+
+@dataclass
+class Critique:
+    """Результат проверки рекомендации критиком (шаг 9). Хранится для журнала и оценки вклада критика."""
+
+    recommendation_id: int
+    iteration: int  # 0: первая версия, 1 и 2: доработки
+    scores: dict[str, int]
+    comment: str
+    passed: bool
