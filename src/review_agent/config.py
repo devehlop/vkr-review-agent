@@ -49,31 +49,38 @@ def make_client(name: str) -> LLMClient:
     if name == "gigachat":
         from review_agent.llm.gigachat import GigaChatClient
 
-        return GigaChatClient(
+        client = GigaChatClient(
             auth_key=_need("GIGACHAT_AUTH_KEY"),
             model=os.environ.get("GIGACHAT_MODEL", "GigaChat-2-Pro"),
             scope=os.environ.get("GIGACHAT_SCOPE", "GIGACHAT_API_PERS"),
             verify=os.environ.get("GIGACHAT_CA_BUNDLE") or True,
             **_price("GIGACHAT"),
         )
+        client.embed_model = os.environ.get("GIGACHAT_EMBED_MODEL", "")
+        return client
     from review_agent.llm.openai_compat import OpenAICompatClient
 
     if name == "yandex":
         folder = _need("YANDEX_FOLDER_ID")
         model = os.environ.get("YANDEX_MODEL", "yandexgpt/latest")
-        return OpenAICompatClient(
+        client = OpenAICompatClient(
             name="yandex",
             base_url="https://llm.api.cloud.yandex.net/v1",
             model=f"gpt://{folder}/{model}",
             api_key=_need("YANDEX_API_KEY"),
             **_price("YANDEX"),
         )
+        embed_model = os.environ.get("YANDEX_EMBED_MODEL", "")
+        client.embed_model = f"emb://{folder}/{embed_model}" if embed_model else ""
+        return client
     if name == "qwen":
-        return OpenAICompatClient(
+        client = OpenAICompatClient(
             name="qwen",
             base_url=os.environ.get("QWEN_BASE_URL", "http://localhost:11434/v1"),
             model=_need("QWEN_MODEL"),
             api_key=os.environ.get("QWEN_API_KEY", ""),
             **_price("QWEN"),
         )
+        client.embed_model = os.environ.get("QWEN_EMBED_MODEL", "")
+        return client
     raise ValueError(f"Неизвестная модель «{name}». Доступные: {', '.join(MODEL_NAMES)}.")

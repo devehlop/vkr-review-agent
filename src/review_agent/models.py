@@ -16,6 +16,7 @@ class Review:
     cons: str = ""
     variant: str = ""
     is_own: bool = True
+    suspicious: bool = False  # почти дословно повторяет другой отзыв на тот же товар (FR-4)
 
 
 @dataclass
@@ -36,6 +37,7 @@ class CleanReport:
     empty: int = 0
     duplicates: int = 0
     kept: int = 0
+    suspicious: int = 0
     notes: list[str] = field(default_factory=list)
 
 

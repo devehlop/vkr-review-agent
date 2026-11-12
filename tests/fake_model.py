@@ -14,9 +14,12 @@ RULES = [  # (подстрока в предложении, атрибут, то
 
 
 class ScriptedModel:
-    def __init__(self, critic_scores: list[int] | None = None, invent_quote: bool = False):
+    def __init__(self, critic_scores: list[int] | None = None, invent_quote: bool = False,
+                 invent_number: bool = False, invent_citation: bool = False):
         self.critic_scores = critic_scores or [5]  # оценки критика по очереди, последняя повторяется
         self.invent_quote = invent_quote
+        self.invent_number = invent_number  # резюме сравнения с числом, которого нет в таблице
+        self.invent_citation = invent_citation  # агент вопросов ссылается на предложение, которого не видел
         self.steps: list[str] = []
 
     def __call__(self, messages: list[dict]) -> str:
@@ -50,6 +53,26 @@ class ScriptedModel:
             score = self.critic_scores[index]
             return self._say("critic", {"scores": dict.fromkeys(("specificity", "grounding", "feasibility", "novelty"), score),
                                         "comment": "" if score >= 4 else "слишком общо"})
+        if "Покупатели хвалят" in prompt:
+            first = re.search(r"^(\d+)\. (.+)$", prompt.split("Предложения из отзывов (номер и текст):\n")[1], re.M)
+            return self._say("strength", {"action": "Добавить в описание слова покупателей о ткани",
+                                          "rationale": "Это хвалят чаще всего",
+                                          "quotes": [{"sentence_id": int(first.group(1)), "quote": first.group(2)}]})
+        if "Напиши короткое резюме" in prompt:
+            row = re.search(r"^- (.+?): наш товар (\d+) %, (.+?) (\d+) %", prompt, re.M)
+            own = 55 if self.invent_number else int(row.group(2))
+            return self._say("compare_summary", {"summary": f"По характеристике «{row.group(1)}» товар уступает: "
+                                                            f"{own} % негатива против {row.group(4)} % у конкурента."})
+        if "Отвечаешь на вопросы" in prompt:
+            if len(messages) == 1:
+                question = prompt.split("Вопрос продавца:")[1].strip()
+                return self._say("qa", {"tool": "search_reviews", "args": {"query": question}})
+            if len(messages) == 3 and "статистик" in prompt.split("Вопрос продавца:")[1]:
+                return self._say("qa", {"tool": "aspect_stats", "args": {"attribute": "Качество пошива"}})
+            ids = [int(n) for n in re.findall(r"^(\d+)\. ", messages[2]["content"], re.M)][:2]
+            if self.invent_citation and len(messages) <= 3:
+                ids = [9999]
+            return self._say("qa", {"answer": "Покупатели пишут об этом в отзывах.", "sentence_ids": ids})
         raise AssertionError("неизвестный запрос: " + prompt[:80])
 
     def _say(self, step: str, data: dict) -> str:

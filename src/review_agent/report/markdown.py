@@ -5,6 +5,7 @@
 from review_agent.pipeline.compare import BETTER, WORSE
 from review_agent.pipeline.orchestrator import PipelineResult
 from review_agent.pipeline.recommend import percent
+from review_agent.pipeline.strengths import find_strengths
 
 EFFORT = {1: "низкая", 2: "средняя", 3: "высокая"}
 
@@ -30,11 +31,18 @@ def build_report(result: PipelineResult, min_mentions: int = 5, examples: int = 
         lines.append(f"- Первое, что стоит сделать: {result.recommendations[0].action}")
     lines.append("")
 
-    strong = sorted((s for s in own_stats if s.mentions >= min_mentions and s.positive / s.mentions >= 0.7),
-                    key=lambda s: -s.coverage)
+    tip_by_attribute = {t.attribute: t for t in result.card_tips}
+    strong = find_strengths(result.stats, own, min_mentions)
     lines += ["## Сильные стороны", ""]
-    lines += [f"- **{s.attribute}**: упоминается в {percent(s.coverage)} отзывов, "
-              f"{percent(s.positive / s.mentions)} упоминаний положительные" for s in strong] or ["Не выявлены."]
+    if not strong:
+        lines.append("Не выявлены.")
+    for item in strong:
+        lines.append(f"- **{item.attribute}**: упоминается в {percent(item.coverage)} отзывов, "
+                     f"{percent(item.positive / item.mentions)} упоминаний положительные")
+        tip = tip_by_attribute.get(item.attribute)
+        if tip:
+            lines.append(f"  - Для карточки товара: {tip.action}")
+            lines += [f"  - «{text_by_id.get(sid, quote)}»" for sid, quote in tip.quotes]
     lines.append("")
 
     lines += ["## Проблемы", ""]
@@ -51,6 +59,8 @@ def build_report(result: PipelineResult, min_mentions: int = 5, examples: int = 
     compared = [c for c in result.comparisons if c.verdict in (WORSE, BETTER)]
     if competitors:
         lines += ["## Сравнение с конкурентами", ""]
+        if result.comparison_summary:
+            lines += [result.comparison_summary, ""]
         if compared:
             lines += ["| Характеристика | Наш товар, доля негатива | " + " | ".join(competitors) + " | Вывод |",
                       "|---|---|" + "---|" * (len(competitors) + 1)]

@@ -114,7 +114,9 @@ def test_pipeline_end_to_end(tmp_path):
     result = run_pipeline(gateway_for(model), make_reviews(), "Платье", storage=storage, on_step=steps.append)
     assert steps[0] == "Предобработка отзывов" and "Рекомендации: проблема 2 из 2" in steps
 
-    assert result.warnings == [] and result.clean.kept == 47
+    # отзывы в тестовых данных отличаются одним числом, поэтому часть из них отмечается как подозрительные
+    assert len(result.warnings) == 1 and "Подозрительных отзывов" in result.warnings[0]
+    assert result.clean.kept == 47 and result.clean.suspicious == 8
     # жалоб на швы шесть, но «Шов разошёлся на боку» базовая кластеризация в группу не относит
     assert [(i.attribute, len(i.sentence_ids)) for i in result.issues] == [("Качество пошива", 5), ("Размер и посадка", 4)]
     sewing = result.issues[0]

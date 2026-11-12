@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS run (
     id INTEGER PRIMARY KEY, started_at TEXT, model TEXT, prompt_version TEXT, status TEXT);
 CREATE TABLE IF NOT EXISTS review (
     run_id INTEGER, id INTEGER, product TEXT, is_own INTEGER, text TEXT, pros TEXT, cons TEXT,
-    rating INTEGER, created TEXT, variant TEXT, PRIMARY KEY (run_id, id));
+    rating INTEGER, created TEXT, variant TEXT, suspicious INTEGER, PRIMARY KEY (run_id, id));
 CREATE TABLE IF NOT EXISTS sentence (
     run_id INTEGER, id INTEGER, review_id INTEGER, text TEXT, source_field TEXT, PRIMARY KEY (run_id, id));
 CREATE TABLE IF NOT EXISTS mention (
@@ -72,15 +72,15 @@ class Storage:
     def save_reviews(self, run_id: int, reviews: list[Review]) -> None:
         self._replace("review", run_id, [
             (r.id, r.product, int(r.is_own), r.text, r.pros, r.cons, r.rating,
-             r.created.isoformat() if r.created else None, r.variant) for r in reviews])
+             r.created.isoformat() if r.created else None, r.variant, int(r.suspicious)) for r in reviews])
 
     def load_reviews(self, run_id: int) -> list[Review]:
         rows = self._db.execute(
-            "SELECT id, product, is_own, text, pros, cons, rating, created, variant FROM review "
+            "SELECT id, product, is_own, text, pros, cons, rating, created, variant, suspicious FROM review "
             "WHERE run_id = ? ORDER BY id", (run_id,))
         return [Review(id=i, product=p, is_own=bool(own), text=t, pros=pr, cons=c, rating=rt,
-                       created=date.fromisoformat(cr) if cr else None, variant=v)
-                for i, p, own, t, pr, c, rt, cr, v in rows]
+                       created=date.fromisoformat(cr) if cr else None, variant=v, suspicious=bool(sus))
+                for i, p, own, t, pr, c, rt, cr, v, sus in rows]
 
     def save_sentences(self, run_id: int, sentences: list[Sentence]) -> None:
         self._replace("sentence", run_id, [(s.id, s.review_id, s.text, s.source_field) for s in sentences])
