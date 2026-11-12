@@ -110,7 +110,9 @@ def test_critic_rejects_after_two_revisions():
 def test_pipeline_end_to_end(tmp_path):
     model = ScriptedModel()
     storage = Storage(tmp_path / "база.db")
-    result = run_pipeline(gateway_for(model), make_reviews(), "Платье", storage=storage)
+    steps = []
+    result = run_pipeline(gateway_for(model), make_reviews(), "Платье", storage=storage, on_step=steps.append)
+    assert steps[0] == "Предобработка отзывов" and "Рекомендации: проблема 2 из 2" in steps
 
     assert result.warnings == [] and result.clean.kept == 47
     # жалоб на швы шесть, но «Шов разошёлся на боку» базовая кластеризация в группу не относит

@@ -28,11 +28,13 @@ def guess_mapping(columns: list[str]) -> dict[str, str]:
     return mapping
 
 
-def _read_table(path: Path) -> pd.DataFrame:
-    if path.suffix.lower() in (".xlsx", ".xls"):
-        return pd.read_excel(path, dtype=str)
+def read_table(source, filename: str | None = None) -> pd.DataFrame:
+    """Читает таблицу из файла на диске или из загруженного файла (тогда нужно имя файла)."""
+    name = (filename or str(source)).lower()
+    if name.endswith((".xlsx", ".xls")):
+        return pd.read_excel(source, dtype=str)
     # sep=None: pandas сам определяет разделитель (запятая, точка с запятой, табуляция)
-    return pd.read_csv(path, dtype=str, sep=None, engine="python", encoding="utf-8-sig")
+    return pd.read_csv(source, dtype=str, sep=None, engine="python", encoding="utf-8-sig")
 
 
 def _cell(row, column) -> str:
@@ -54,12 +56,21 @@ def load_reviews(
     Читаются только сопоставленные колонки: остальные (имя покупателя, фото) игнорируются.
     """
     path = Path(path)
-    table = _read_table(path)
+    try:
+        return reviews_from_table(read_table(path), product, mapping, is_own)
+    except ValueError as error:
+        raise ValueError(f"Файл {path.name}: {error}") from error
+
+
+def reviews_from_table(
+    table: pd.DataFrame, product: str, mapping: dict[str, str] | None = None, is_own: bool = True
+) -> list[Review]:
+    """Преобразует таблицу в отзывы. Читаются только сопоставленные колонки."""
     mapping = mapping or guess_mapping(list(table.columns))
     if not any(k in mapping for k in ("text", "pros", "cons")):
         raise ValueError(
-            f"В файле {path.name} не найдена колонка с текстом отзыва. "
-            f"Колонки файла: {list(table.columns)}. Укажите соответствие в mapping."
+            f"не найдена колонка с текстом отзыва. Колонки файла: {list(table.columns)}. "
+            "Укажите соответствие в mapping."
         )
 
     reviews = []

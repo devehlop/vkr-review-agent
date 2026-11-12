@@ -1,4 +1,5 @@
 """Оркестратор: запускает шаги конвейера по порядку, от отзывов к рекомендациям."""
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 
 from review_agent.llm.base import LLMError
@@ -61,6 +62,7 @@ def run_pipeline(
     settings: Settings | None = None,
     storage: Storage | None = None,
     embed: Embedder = tfidf_embed,
+    on_step: Callable[[str], None] | None = None,
 ) -> PipelineResult:
     """Полный прогон: reviews содержит отзывы на свой товар и, если есть, на товары конкурентов.
 
@@ -68,8 +70,10 @@ def run_pipeline(
     """
     cfg = settings or Settings()
     warnings: list[str] = []
+    say = on_step or (lambda text: None)  # интерфейс показывает, какой шаг выполняется
 
     # Шаг 2. Предобработка. Отзывы из разных файлов получают сквозную нумерацию.
+    say("Предобработка отзывов")
     reviews = [replace(r, id=number) for number, r in enumerate(reviews, start=1)]
     reviews, clean = clean_reviews(reviews)
     own_count = sum(r.product == own_product for r in reviews)
@@ -87,9 +91,11 @@ def run_pipeline(
 
     # Шаг 3. Справочник аспектов
     if taxonomy is None:
+        say("Составление справочника аспектов")
         taxonomy = build_taxonomy(gateway, reviews, cfg.category).as_hints()
 
     # Шаг 4. Извлечение аспектов
+    say(f"Извлечение аспектов: {len(sentences)} предложений")
     extraction = extract_mentions(gateway, sentences, taxonomy, cfg.category, cfg.batch_size)
     mentions = extraction.mentions
     if extraction.failed_ids:
@@ -103,6 +109,7 @@ def run_pipeline(
     comparison_by_attribute = {c.attribute: c for c in comparisons}
 
     # Шаг 6. Проблемы
+    say("Выделение проблем")
     issues = find_issues(gateway, reviews, sentences, mentions, stats, own_product, comparisons,
                          cfg.category, cfg.min_issue_size, cfg.distance_threshold, embed)
 
@@ -112,6 +119,7 @@ def run_pipeline(
     critiques: list[Critique] = []
     next_id = 1
     for issue in issues:
+        say(f"Рекомендации: проблема {issue.id} из {len(issues)}")
         context = issue_context(issue, sentences, comparison_by_attribute.get(issue.attribute), cfg.category)
         try:
             drafts = generate(gateway, context, cfg.recommendations_per_issue)
@@ -137,6 +145,7 @@ def run_pipeline(
                 expected_effect=draft.expected_effect.strip()))
 
     # Шаги 10 и 11. Приоритеты и проверка опоры на отзывы (без модели)
+    say("Проверка опоры на отзывы и расстановка приоритетов")
     recommendations, ungrounded = check_grounding(recommendations, issues, sentences, cfg.min_issue_size)
     rejected.extend((item.action, f"нет опоры на отзывы: {reason}") for item, reason in ungrounded)
     recommendations = prioritize(recommendations, issues)

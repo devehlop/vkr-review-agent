@@ -62,3 +62,17 @@ def test_split_reviews_keeps_source_field():
         ("Но швы расходятся!", "комментарий"),
     ]
     assert [s.id for s in sentences] == [1, 2, 3] and all(s.review_id == 7 for s in sentences)
+
+
+def test_read_uploaded_file_and_manual_mapping():
+    """Интерфейс передаёт загруженный файл как поток байтов и соответствие колонок, выбранное пользователем."""
+    import io
+
+    from review_agent.ingest import read_table, reviews_from_table
+
+    data = "Покупатель;Мнение;Звёзд\nАнна;Хорошее платье;5\n".encode("utf-8")
+    table = read_table(io.BytesIO(data), "выгрузка.csv")
+    with pytest.raises(ValueError, match="не найдена колонка"):
+        reviews_from_table(table, "платье")
+    review = reviews_from_table(table, "платье", {"text": "Мнение", "rating": "Звёзд"}, is_own=False)[0]
+    assert (review.text, review.rating, review.is_own) == ("Хорошее платье", 5, False)
