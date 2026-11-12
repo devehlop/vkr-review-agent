@@ -251,9 +251,9 @@ src/review_agent/
 ├── preprocess/            # очистка, razdel, подозрительные отзывы
 ├── llm/
 │   ├── base.py            # общий интерфейс LLMClient
-│   ├── gigachat.py
-│   ├── yandex.py
-│   ├── ollama.py
+│   ├── gigachat.py        # авторизация по токену, формат чата как у OpenAI
+│   ├── openai_compat.py   # YandexGPT, Ollama и другие серверы с OpenAI-совместимым API
+│   ├── fake.py            # фиктивный клиент для тестов
 │   └── gateway.py         # схема, повторы, кэш, журнал, стоимость
 ├── prompts/               # промпты в отдельных файлах с номером версии
 ├── pipeline/
