@@ -158,20 +158,16 @@ LLM получает случайную выборку (~150 отзывов) и 
 
 ## 6. Модель данных
 
+Диаграмма приведена в соответствие с кодом 12.11.2026 (`src/review_agent/storage/db.py`).
+
 ```mermaid
 erDiagram
-    RUN ||--o{ PRODUCT : "анализирует"
-    PRODUCT ||--o{ REVIEW : "имеет"
+    RUN ||--o{ REVIEW : "содержит"
     REVIEW ||--o{ SENTENCE : "делится на"
     SENTENCE ||--o{ MENTION : "содержит"
-    RUN ||--o{ TAXONOMY_ITEM : "использует"
-    TAXONOMY_ITEM ||--o{ MENTION : "классифицирует"
     RUN ||--o{ ISSUE : "выявляет"
-    ISSUE ||--o{ ISSUE_MENTION : "объединяет"
-    MENTION ||--o{ ISSUE_MENTION : "входит в"
     ISSUE ||--o{ RECOMMENDATION : "решается"
     RECOMMENDATION ||--o{ CRITIQUE : "проверяется"
-    RUN ||--o{ LLM_CALL : "журнал"
 
     RUN {
         int id
@@ -180,67 +176,62 @@ erDiagram
         string prompt_version
         string status
     }
-    PRODUCT {
-        int id
-        string name
-        bool is_own
-        string marketplace
-    }
     REVIEW {
         int id
+        string product
+        bool is_own
+        string text
+        string pros
+        string cons
         int rating
         date created
         string variant
-        bool suspicious
     }
     SENTENCE {
         int id
+        int review_id
         string text
         string source_field
     }
-    TAXONOMY_ITEM {
-        int id
+    MENTION {
+        int sentence_id
         string attribute
         string feature
-    }
-    MENTION {
-        int id
         int sentiment
         string quote
     }
     ISSUE {
         int id
+        string product
+        string attribute
         string title
+        string sentence_ids
         float coverage
         float neg_share
+        bool rarer_at_competitors
     }
     RECOMMENDATION {
         int id
+        int issue_id
         string action
         string type
         string rationale
+        string expected_effect
         int effort
+        string quotes
         float priority
         bool grounded
     }
     CRITIQUE {
-        int id
+        int recommendation_id
         int iteration
         string scores
         string comment
         bool passed
     }
-    LLM_CALL {
-        int id
-        string step
-        int tokens_in
-        int tokens_out
-        float cost
-        float latency
-    }
 ```
 
-Таблица `LLM_CALL` нужна сразу для трёх вещей: подсчёт стоимости (NFR-3), воспроизводимость (NFR-5) и материалы для главы 3.
+Все таблицы привязаны к запуску. Журнал запросов к модели ведётся шлюзом в файле JSONL (`logs/`), а не в базе: он нужен для подсчёта стоимости (NFR-3), воспроизводимости (NFR-5) и материалов главы 3. Справочник аспектов в базе пока не хранится.
 
 ## 7. Структура кода
 
