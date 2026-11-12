@@ -9,7 +9,7 @@ import sqlite3
 from datetime import date, datetime
 from pathlib import Path
 
-from review_agent.models import Issue, Recommendation, Review, Sentence
+from review_agent.models import Critique, Issue, Recommendation, Review, Sentence
 from review_agent.pipeline.extract import Mention
 
 SCHEMA = """
@@ -27,7 +27,9 @@ CREATE TABLE IF NOT EXISTS issue (
     coverage REAL, neg_share REAL, rarer_at_competitors INTEGER, PRIMARY KEY (run_id, id));
 CREATE TABLE IF NOT EXISTS recommendation (
     run_id INTEGER, id INTEGER, issue_id INTEGER, action TEXT, type TEXT, rationale TEXT, effort INTEGER,
-    quotes TEXT, priority REAL, grounded INTEGER, PRIMARY KEY (run_id, id));
+    quotes TEXT, priority REAL, grounded INTEGER, expected_effect TEXT, PRIMARY KEY (run_id, id));
+CREATE TABLE IF NOT EXISTS critique (
+    run_id INTEGER, recommendation_id INTEGER, iteration INTEGER, scores TEXT, comment TEXT, passed INTEGER);
 CREATE INDEX IF NOT EXISTS mention_run ON mention (run_id, sentence_id);
 """
 
@@ -119,11 +121,22 @@ class Storage:
     def save_recommendations(self, run_id: int, items: list[Recommendation]) -> None:
         self._replace("recommendation", run_id, [
             (r.id, r.issue_id, r.action, r.type, r.rationale, r.effort,
-             json.dumps(r.quotes, ensure_ascii=False), r.priority, int(r.grounded)) for r in items])
+             json.dumps(r.quotes, ensure_ascii=False), r.priority, int(r.grounded), r.expected_effect) for r in items])
 
     def load_recommendations(self, run_id: int) -> list[Recommendation]:
         rows = self._db.execute(
-            "SELECT id, issue_id, action, type, rationale, effort, quotes, priority, grounded "
+            "SELECT id, issue_id, action, type, rationale, effort, quotes, priority, grounded, expected_effect "
             "FROM recommendation WHERE run_id = ? ORDER BY priority DESC, id", (run_id,))
-        return [Recommendation(i, iss, a, t, r, e, [tuple(q) for q in json.loads(q_)], p, bool(g))
-                for i, iss, a, t, r, e, q_, p, g in rows]
+        return [Recommendation(i, iss, a, t, r, e, [tuple(q) for q in json.loads(q_)], p, bool(g), eff or "")
+                for i, iss, a, t, r, e, q_, p, g, eff in rows]
+
+    def save_critiques(self, run_id: int, items: list[Critique]) -> None:
+        """Все проверки критика, включая отклонённые рекомендации: материал для оценки вклада критика."""
+        self._replace("critique", run_id, [
+            (c.recommendation_id, c.iteration, json.dumps(c.scores), c.comment, int(c.passed)) for c in items])
+
+    def load_critiques(self, run_id: int) -> list[Critique]:
+        rows = self._db.execute(
+            "SELECT recommendation_id, iteration, scores, comment, passed FROM critique WHERE run_id = ? ORDER BY rowid",
+            (run_id,))
+        return [Critique(r, i, json.loads(s), c, bool(p)) for r, i, s, c, p in rows]
