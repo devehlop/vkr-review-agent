@@ -14,6 +14,10 @@ from review_agent.llm.base import LLMError
 from review_agent.llm.gateway import LLMGateway
 from review_agent.pipeline.compare import NO_DATA
 from review_agent.pipeline.orchestrator import PipelineResult, Settings, run_pipeline
+from review_agent.pipeline.strengths import find_strengths
+from review_agent.pipeline.taxonomy import build_taxonomy
+from review_agent.preprocess import clean_reviews
+from review_agent.qa import answer_question
 from review_agent.report import build_report
 from review_agent.storage import Storage
 
@@ -61,13 +65,48 @@ def upload_block(key: str, title: str, default_name: str) -> tuple[str, pd.DataF
     return name.strip() or default_name, table, mapping
 
 
-def run_analysis(own, competitors, model_name: str, settings: Settings, taxonomy: dict | None) -> PipelineResult:
+def make_gateway(model_name: str) -> LLMGateway:
+    client = config.make_client(model_name)
+    return LLMGateway(client, journal_path=config.ROOT / "logs" / f"{client.name}.jsonl",
+                      cache_dir=config.ROOT / ".cache" / client.name)
+
+
+def collect_reviews(own, competitors) -> list:
     reviews = reviews_from_table(own[1], own[0], own[2])
     for name, table, mapping in competitors:
         reviews += reviews_from_table(table, name, mapping, is_own=False)
-    client = config.make_client(model_name)
-    gateway = LLMGateway(client, journal_path=config.ROOT / "logs" / f"{client.name}.jsonl",
-                         cache_dir=config.ROOT / ".cache" / client.name)
+    return reviews
+
+
+def prepare_taxonomy(own, competitors, model_name: str, category: str, ready: bool) -> pd.DataFrame:
+    """Справочник характеристик: готовый для одежды или составленный моделью по загруженным отзывам."""
+    if ready:
+        hints = json.loads((config.ROOT / "eval" / "taxonomy_clothing.json").read_text(encoding="utf-8"))
+    else:
+        reviews, _ = clean_reviews(collect_reviews(own, competitors))
+        with st.spinner("Модель составляет справочник по отзывам…"):
+            hints = build_taxonomy(make_gateway(model_name), reviews, category).as_hints()
+    return pd.DataFrame(hints.items(), columns=["Характеристика", "Пояснение"])
+
+
+def taxonomy_from_table(table: pd.DataFrame) -> dict[str, str]:
+    """Справочник после правок пользователя. Пустые строки отбрасываются, названия должны различаться."""
+    hints = {}
+    for name, hint in zip(table["Характеристика"], table["Пояснение"]):
+        name = "" if pd.isna(name) else str(name).strip()
+        if not name:
+            continue
+        if name in hints:
+            raise ValueError(f"Характеристика «{name}» указана дважды.")
+        hints[name] = "" if pd.isna(hint) else str(hint).strip()
+    if len(hints) < 2:
+        raise ValueError("В справочнике должно быть не меньше двух характеристик.")
+    return hints
+
+
+def run_analysis(own, competitors, model_name: str, settings: Settings, taxonomy: dict | None) -> PipelineResult:
+    reviews = collect_reviews(own, competitors)
+    gateway = make_gateway(model_name)
     with st.status("Идёт анализ…", expanded=True) as status:
         result = run_pipeline(gateway, reviews, own[0], taxonomy, settings,
                               Storage(config.ROOT / "data" / "review_agent.db"), on_step=st.write)
@@ -120,14 +159,20 @@ def tab_report(result: PipelineResult) -> None:
             show_reviews(result, [sid for sid, _ in rec.quotes])
 
     st.subheader("Сильные стороны")
-    strong = [s for s in result.stats if s.product == own and not s.feature and s.mentions >= 5
-              and s.positive / s.mentions >= 0.7]
-    if strong:
-        for item in sorted(strong, key=lambda s: -s.coverage):
-            st.markdown(f"- **{item.attribute}**: упоминается в {pct(item.coverage)} отзывов, "
-                        f"{pct(item.positive / item.mentions)} упоминаний положительные")
-    else:
+    tip_by_attribute = {t.attribute: t for t in result.card_tips}
+    strong = find_strengths(result.stats, own)
+    if not strong:
         st.write("Не выявлены.")
+    for item in strong:
+        st.markdown(f"**{item.attribute}**: упоминается в {pct(item.coverage)} отзывов, "
+                    f"{pct(item.positive / item.mentions)} упоминаний положительные")
+        tip = tip_by_attribute.get(item.attribute)
+        if tip:
+            with st.expander(f"Что добавить в карточку товара: {tip.action}"):
+                if tip.rationale:
+                    st.markdown(f"**Почему:** {tip.rationale}")
+                st.markdown("**Отзывы:**")
+                show_reviews(result, [sid for sid, _ in tip.quotes])
     st.download_button("Скачать отчёт (Markdown)", build_report(result), file_name="report.md", mime="text/markdown")
 
 
@@ -196,6 +241,8 @@ def tab_compare(result: PipelineResult) -> None:
             row[f"{name}, %"] = round(item.competitors[name][0] * 100) if name in item.competitors else None
         row["Наш товар"] = "мало данных для сравнения" if item.verdict == NO_DATA else item.verdict
         rows.append(row)
+    if result.comparison_summary:
+        st.info(result.comparison_summary)
     st.caption("Сравнивается доля негативных упоминаний характеристики. Вывод делается, только если упоминаний достаточно.")
     st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
@@ -213,6 +260,15 @@ def tab_journal(result: PipelineResult) -> None:
     clean = result.clean
     st.write(f"Загружено отзывов: {clean.total}. Пустых: {clean.empty}, дубликатов: {clean.duplicates}, "
              f"в анализе: {clean.kept}. Предложений: {len(result.sentences)}.")
+    suspicious = [r for r in result.reviews if r.suspicious]
+    st.write(f"Подозрительных отзывов (почти одинаковый текст): {clean.suspicious}.")
+    if suspicious:
+        with st.expander(f"Показать подозрительные отзывы ({len(suspicious)})"):
+            st.dataframe(pd.DataFrame({
+                "Товар": [r.product for r in suspicious],
+                "Оценка": [r.rating for r in suspicious],
+                "Текст": [" ".join(t for t in (r.pros, r.cons, r.text) if t) for r in suspicious]}),
+                width="stretch", hide_index=True)
     st.write(f"Ответов модели с ошибкой формата: {usage.format_errors}. Запросов без ответа: {usage.failed}.")
     st.subheader("Отклонённые рекомендации")
     if result.rejected:
@@ -224,6 +280,34 @@ def tab_journal(result: PipelineResult) -> None:
                  width="stretch", hide_index=True)
 
 
+def tab_questions(result: PipelineResult) -> None:
+    st.caption("Задайте вопрос по отзывам. Агент сам выбирает, какие данные посмотреть, и отвечает со ссылками на отзывы. "
+               "Примеры: «Что пишут про размер?», «На что жалуются чаще всего?»")
+    history = st.session_state.setdefault("questions", [])
+    with st.form("question_form", clear_on_submit=True):
+        question = st.text_input("Вопрос")
+        asked = st.form_submit_button("Спросить")
+    if asked and question.strip():
+        try:
+            with st.spinner("Агент ищет ответ…"):
+                answer = answer_question(make_gateway(st.session_state["model_name"]), result, question,
+                                         st.session_state.get("category", "одежда"))
+            history.insert(0, (question.strip(), answer))
+        except RuntimeError as error:  # нет ключа модели
+            st.error(f"Вопрос не обработан: {error}")
+    for asked_question, answer in history:
+        with st.container(border=True):
+            st.markdown(f"**{asked_question}**")
+            (st.write if answer.ok else st.error)(answer.text)
+            if answer.tool_calls:
+                names = {"search_reviews": "поиск по отзывам", "aspect_stats": "статистика по характеристике",
+                         "compare": "сравнение с конкурентами", "list_issues": "список проблем"}
+                st.caption("Что смотрел агент: " + ", ".join(names.get(name, name) for name, _ in answer.tool_calls))
+            if answer.sentence_ids:
+                with st.expander(f"Отзывы, на которые опирается ответ ({len(answer.sentence_ids)})"):
+                    show_reviews(result, answer.sentence_ids)
+
+
 # ---------- страница ----------
 st.title("Анализ отзывов покупателей")
 st.caption("Загрузите отзывы на свой товар и, если есть, на товары конкурентов. "
@@ -233,10 +317,15 @@ with st.sidebar:
     st.header("Настройки")
     model_name = st.selectbox("Модель", list(MODELS), format_func=MODELS.get)
     category = st.text_input("Категория товаров", value="одежда")
-    ready_taxonomy = st.checkbox("Готовый справочник для одежды", value=False,
-                                 help="Иначе справочник характеристик составит модель по вашим отзывам.")
+    ready_taxonomy = st.radio("Справочник характеристик", ["Составит модель", "Готовый для одежды"],
+                              help="В обоих случаях справочник можно поправить перед анализом.") == "Готовый для одежды"
     use_critic = st.checkbox("Проверять рекомендации критиком", value=True,
                              help="Отдельный запрос к модели оценивает каждую рекомендацию и возвращает слабые на доработку.")
+    model_embeddings = st.checkbox("Группировать жалобы по смыслу", value=False,
+                                   help="Использует эмбеддинги модели, если они заданы в .env. "
+                                        "Без них жалобы группируются по совпадению слов.")
+    exclude_suspicious = st.checkbox("Исключить подозрительные отзывы", value=False,
+                                     help="Отзывы с почти одинаковым текстом могут быть накруткой.")
     st.caption("Ключи моделей задаются в файле .env, см. .env.example.")
 
 left, right = st.columns(2)
@@ -250,21 +339,39 @@ with right:
                    for i in range(int(count))]
 
 ready = own is not None and all(c is not None for c in competitors)
-if st.button("Запустить анализ", type="primary", disabled=not ready):
-    names = [own[0]] + [c[0] for c in competitors]
-    if len(set(names)) != len(names):
-        st.error("Названия товаров должны различаться.")
-    else:
-        taxonomy = None
-        if ready_taxonomy:
-            taxonomy = json.loads((config.ROOT / "eval" / "taxonomy_clothing.json").read_text(encoding="utf-8"))
-        try:
-            st.session_state["result"] = run_analysis(
-                own, competitors, model_name, Settings(category=category, use_critic=use_critic), taxonomy)
-        except (RuntimeError, ValueError, LLMError) as error:
-            # нет ключа модели, в файле нет отзывов или модель недоступна
-            st.session_state.pop("result", None)
-            st.error(f"Анализ не выполнен: {error}")
+names = [own[0]] + [c[0] for c in competitors] if ready else []
+if ready and len(set(names)) != len(names):
+    st.error("Названия товаров должны различаться.")
+    ready = False
+
+st.subheader("Справочник характеристик")
+if st.button("1. Подготовить справочник", disabled=not ready):
+    try:
+        st.session_state["taxonomy"] = prepare_taxonomy(own, competitors, model_name, category, ready_taxonomy)
+    except (RuntimeError, ValueError, LLMError) as error:
+        st.error(f"Справочник не подготовлен: {error}")
+
+edited = None
+if "taxonomy" in st.session_state:
+    st.caption("По этим характеристикам будут разобраны отзывы. Строки можно править, добавлять и удалять.")
+    edited = st.data_editor(st.session_state["taxonomy"], num_rows="dynamic", width="stretch",
+                            hide_index=True, key="taxonomy_editor")
+else:
+    st.caption("Загрузите отзывы и подготовьте справочник: его составит модель или будет взят готовый для одежды.")
+
+if st.button("2. Запустить анализ", type="primary", disabled=not ready or edited is None):
+    try:
+        settings = Settings(category=category, use_critic=use_critic, exclude_suspicious=exclude_suspicious,
+                            embeddings="model" if model_embeddings else "tfidf")
+        st.session_state["result"] = run_analysis(own, competitors, model_name, settings, taxonomy_from_table(edited))
+        st.session_state["model_name"] = model_name
+        st.session_state["category"] = category
+        st.session_state["questions"] = []
+        st.session_state["view"] = "Отчёт"
+    except (RuntimeError, ValueError, LLMError) as error:
+        # нет ключа модели, ошибка в справочнике, в файле нет отзывов или модель недоступна
+        st.session_state.pop("result", None)
+        st.error(f"Анализ не выполнен: {error}")
 
 result: PipelineResult | None = st.session_state.get("result")
 if result:
@@ -272,7 +379,9 @@ if result:
     st.header(f"Результат: {result.own_product}")
     for warning in result.warnings:
         st.warning(warning)
-    tabs = st.tabs(["Отчёт", "Проблемы", "Характеристики", "Сравнение с конкурентами", "Журнал"])
-    for tab, render in zip(tabs, (tab_report, tab_issues, tab_aspects, tab_compare, tab_journal)):
-        with tab:
-            render(result)
+    views = {"Отчёт": tab_report, "Проблемы": tab_issues, "Характеристики": tab_aspects,
+             "Сравнение с конкурентами": tab_compare, "Вопросы": tab_questions, "Журнал": tab_journal}
+    # Переключатель с ключом, а не st.tabs: выбранный раздел сохраняется при обновлении страницы,
+    # например после отправки вопроса агенту
+    view = st.segmented_control("Раздел", list(views), default="Отчёт", key="view", label_visibility="collapsed")
+    views[view or "Отчёт"](result)
