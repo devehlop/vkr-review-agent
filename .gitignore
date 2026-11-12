@@ -1,0 +1,10 @@
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.venv/
+.env
+# кэш и журнал запросов к LLM
+.cache/
+logs/
+# полные датасеты не храним в репозитории, только выборки
+data/raw/
