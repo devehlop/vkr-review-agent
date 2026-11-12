@@ -57,7 +57,7 @@ flowchart LR
 | Эмбеддинги | Векторные представления предложений для кластеризации проблем | FR-10 |
 | Сборка отчёта | Отчёт в интерфейсе, экспорт в DOCX/PDF | FR-18, FR-20 |
 | Агент вопросов | Ответы на вопросы с вызовом инструментов | FR-21 |
-| Модуль оценки | Прогон на эталонной разметке, метрики, сравнение моделей | раздел 6 ТЗ |
+| Модуль оценки | Прогон на эталонной разметке, метрики, сравнение моделей | раздел 7.2 ТЗ |
 
 ## 3. Конвейер анализа
 
@@ -115,7 +115,7 @@ LLM получает случайную выборку (~150 отзывов) и 
 - **Генератор** получает проблему, её статистику, примеры отзывов и данные конкурентов и предлагает 1–2 действия в формате: действие, тип (товар / упаковка / карточка товара / размерная сетка / логистика), обоснование, ожидаемый эффект, оценка сложности (1–3).
 - Для сильных сторон отдельно генерируются рекомендации для карточки товара: что подчеркнуть в описании.
 - **Критик** оценивает рекомендацию по четырём критериям: конкретность, опора на отзывы, выполнимость для продавца, отсутствие повтора с другими рекомендациями. Если хотя бы один ниже порога, рекомендация возвращается генератору вместе с замечаниями. Не более двух доработок. Рекомендация, которая не прошла проверку и после них, в отчёт не попадает, но остаётся в журнале запуска для анализа.
-- Для оценки вклада критика (раздел 6 ТЗ) конвейер можно запустить с критиком и без него.
+- Для оценки вклада критика (раздел 7.2 ТЗ) конвейер можно запустить с критиком и без него.
 
 ### Шаг 10. Приоритизация
 Простая объяснимая формула:
@@ -158,20 +158,16 @@ LLM получает случайную выборку (~150 отзывов) и 
 
 ## 6. Модель данных
 
+Диаграмма приведена в соответствие с кодом 12.11.2026 (`src/review_agent/storage/db.py`).
+
 ```mermaid
 erDiagram
-    RUN ||--o{ PRODUCT : "анализирует"
-    PRODUCT ||--o{ REVIEW : "имеет"
+    RUN ||--o{ REVIEW : "содержит"
     REVIEW ||--o{ SENTENCE : "делится на"
     SENTENCE ||--o{ MENTION : "содержит"
-    RUN ||--o{ TAXONOMY_ITEM : "использует"
-    TAXONOMY_ITEM ||--o{ MENTION : "классифицирует"
     RUN ||--o{ ISSUE : "выявляет"
-    ISSUE ||--o{ ISSUE_MENTION : "объединяет"
-    MENTION ||--o{ ISSUE_MENTION : "входит в"
     ISSUE ||--o{ RECOMMENDATION : "решается"
     RECOMMENDATION ||--o{ CRITIQUE : "проверяется"
-    RUN ||--o{ LLM_CALL : "журнал"
 
     RUN {
         int id
@@ -180,67 +176,62 @@ erDiagram
         string prompt_version
         string status
     }
-    PRODUCT {
-        int id
-        string name
-        bool is_own
-        string marketplace
-    }
     REVIEW {
         int id
+        string product
+        bool is_own
+        string text
+        string pros
+        string cons
         int rating
         date created
         string variant
-        bool suspicious
     }
     SENTENCE {
         int id
+        int review_id
         string text
         string source_field
     }
-    TAXONOMY_ITEM {
-        int id
+    MENTION {
+        int sentence_id
         string attribute
         string feature
-    }
-    MENTION {
-        int id
         int sentiment
         string quote
     }
     ISSUE {
         int id
+        string product
+        string attribute
         string title
+        string sentence_ids
         float coverage
         float neg_share
+        bool rarer_at_competitors
     }
     RECOMMENDATION {
         int id
+        int issue_id
         string action
         string type
         string rationale
+        string expected_effect
         int effort
+        string quotes
         float priority
         bool grounded
     }
     CRITIQUE {
-        int id
+        int recommendation_id
         int iteration
         string scores
         string comment
         bool passed
     }
-    LLM_CALL {
-        int id
-        string step
-        int tokens_in
-        int tokens_out
-        float cost
-        float latency
-    }
 ```
 
-Таблица `LLM_CALL` нужна сразу для трёх вещей: подсчёт стоимости (NFR-3), воспроизводимость (NFR-5) и материалы для главы 3.
+Все таблицы привязаны к запуску. Журнал запросов к модели ведётся шлюзом в файле JSONL (`logs/`), а не в базе: он нужен для подсчёта стоимости (NFR-3), воспроизводимости (NFR-5) и материалов главы 3. Справочник аспектов в базе пока не хранится.
 
 ## 7. Структура кода
 
@@ -251,9 +242,9 @@ src/review_agent/
 ├── preprocess/            # очистка, razdel, подозрительные отзывы
 ├── llm/
 │   ├── base.py            # общий интерфейс LLMClient
-│   ├── gigachat.py
-│   ├── yandex.py
-│   ├── ollama.py
+│   ├── gigachat.py        # авторизация по токену, формат чата как у OpenAI
+│   ├── openai_compat.py   # YandexGPT, Ollama и другие серверы с OpenAI-совместимым API
+│   ├── fake.py            # фиктивный клиент для тестов
 │   └── gateway.py         # схема, повторы, кэш, журнал, стоимость
 ├── prompts/               # промпты в отдельных файлах с номером версии
 ├── pipeline/
