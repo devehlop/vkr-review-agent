@@ -19,6 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 report = ["python-docx>=1.1"]
+ui = ["streamlit>=1.40"]
 # Нейросетевые эмбеддинги для шага 6 (тяжёлая зависимость: torch)
 embeddings = ["sentence-transformers>=3.0"]
 
