@@ -13,11 +13,14 @@ dependencies = [
     "pandas>=2.2",
     "openpyxl>=3.1",
     "httpx>=0.27",
+    "scikit-learn>=1.4",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 report = ["python-docx>=1.1"]
+# Нейросетевые эмбеддинги для шага 6 (тяжёлая зависимость: torch)
+embeddings = ["sentence-transformers>=3.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
