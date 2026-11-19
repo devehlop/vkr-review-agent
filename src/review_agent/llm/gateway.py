@@ -126,12 +126,18 @@ class LLMGateway:
 
     def complete(self, step: str, messages: list[Message], attempt: int = 1) -> LLMResponse:
         """Один запрос с кэшем и повторами при сетевых ошибках."""
+        resp, record = self._request(step, messages, attempt)
+        self._log(record)
+        return resp
+
+    def _request(self, step: str, messages: list[Message], attempt: int) -> tuple[LLMResponse, LLMCallRecord]:
+        """Запрос к модели. Запись об успешном ответе возвращается, а не пишется сразу:
+        structured() сначала проверяет ответ и отмечает в записи ошибку формата."""
         key = _hash(self.client.model, self.temperature, messages)
         base = {"step": step, "provider": self.client.provider, "model": self.client.model, "attempt": attempt, "prompt_hash": key}
         if self.use_cache and key in self._cache:
             resp = self._cache[key]
-            self._log(LLMCallRecord(**base, cached=True, response=resp.text))
-            return resp
+            return resp, LLMCallRecord(**base, cached=True, response=resp.text)
 
         delay = 2.0
         for net_try in range(1, self.max_network_retries + 1):
@@ -145,20 +151,17 @@ class LLMGateway:
                 self._sleep(delay)
                 delay *= 2
                 continue
-            latency = time.perf_counter() - started
-            self._log(
-                LLMCallRecord(
-                    **base,
-                    tokens_in=resp.tokens_in,
-                    tokens_out=resp.tokens_out,
-                    cost=self.client.cost(resp.tokens_in, resp.tokens_out),
-                    latency=latency,
-                    response=resp.text,
-                )
+            record = LLMCallRecord(
+                **base,
+                tokens_in=resp.tokens_in,
+                tokens_out=resp.tokens_out,
+                cost=self.client.cost(resp.tokens_in, resp.tokens_out),
+                latency=time.perf_counter() - started,
+                response=resp.text,
             )
             if self.use_cache:
                 self._cache[key] = resp
-            return resp
+            return resp, record
         raise AssertionError("недостижимо")
 
     def structured(
@@ -177,17 +180,19 @@ class LLMGateway:
         dialog = list(messages)
         errors: list[str] = []
         for attempt in range(1, self.max_format_retries + 2):
-            resp = self.complete(step, dialog, attempt=attempt)
+            resp, record = self._request(step, dialog, attempt)
             try:
                 parsed = schema.model_validate(extract_json(resp.text))
                 errors = validate(parsed) if validate else []
             except (ValueError, ValidationError) as e:
                 errors = [_short_error(e)]
             if not errors:
+                self._log(record)
                 return parsed
             # Отмечаем в журнале, что ответ не прошёл проверку
-            self.records[-1].ok = False
-            self.records[-1].error = "; ".join(errors)[:1000]
+            record.ok = False
+            record.error = "; ".join(errors)[:1000]
+            self._log(record)
             dialog = dialog + [
                 Message("assistant", resp.text),
                 Message(
