@@ -77,3 +77,22 @@ def test_mixed_sentiment_becomes_neutral():
         Mention(sentence_id="s", attribute="Цена", feature="другое", sentiment=-1, quote="d"),
     ]
     assert mentions_to_labels(ms, TAX) == {"s": {"fabric": 0, "price": -1}}
+
+
+def test_fewshot_examples_file_is_valid_and_not_from_eval_splits():
+    import csv
+    from pathlib import Path
+
+    from review_agent.pipeline.extract import quote_in_sentence
+
+    data = json.loads(Path("eval/fewshot_examples.json").read_text(encoding="utf-8"))
+    eval_sentences = set()
+    for split in ("mini", "test"):
+        with open(f"data/annotation/{split}.csv", encoding="utf-8") as f:
+            eval_sentences |= {r["sentence"] for r in csv.DictReader(f)}
+    for ex in data["examples"]:
+        assert ex["sentence"] not in eval_sentences
+        for m in ex["mentions"]:
+            m = ExtractedMention(**m)
+            assert TAX.has(m.attribute) and (m.feature == "другое" or TAX.has(m.attribute, m.feature))
+            assert quote_in_sentence(m.quote, ex["sentence"])

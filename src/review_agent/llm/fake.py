@@ -40,3 +40,17 @@ class FakeLLMClient(LLMClient):
             tokens_out=estimate_tokens(text),
             model=self.model,
         )
+
+
+def empty_extraction_responder(messages: list[Message]) -> str:
+    """Отвечает на промпт извлечения аспектов пустыми списками для каждого предложения.
+
+    Нужен для пробного прогона эксперимента без ключей: проверяет, что весь
+    путь от файла разметки до метрик работает.
+    """
+    import json
+    import re
+
+    text = messages[-1].content.split("Предложения:")[-1]
+    ids = re.findall(r"^(\d+)\. ", text, flags=re.MULTILINE)
+    return json.dumps({"results": [{"id": i, "mentions": []} for i in ids]})
