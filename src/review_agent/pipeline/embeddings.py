@@ -52,7 +52,9 @@ class TfidfEmbedder:
 
 
 class SentenceTransformerEmbedder:
-    default_threshold = 0.5
+    # Замер 19.11.2026 на демо-наборе (docs/experiments.md): при 0,4 группы
+    # осмысленные, при 0,5 и выше атрибут сливается в один кластер
+    default_threshold = 0.4
 
     def __init__(self, model: str = "cointegrated/rubert-tiny2"):
         from sentence_transformers import SentenceTransformer
