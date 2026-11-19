@@ -66,7 +66,7 @@ def find_clusters(
     mentions: list[Mention],
     embedder: Embedder,
     product_ids: set[str] | None = None,
-    distance_threshold: float = 0.6,
+    distance_threshold: float | None = None,
     min_size: int = Thresholds.min_issue_size,
     top_quotes: int = 7,
 ) -> list[Cluster]:
@@ -80,6 +80,8 @@ def find_clusters(
         if m.sentiment == -1 and (product_ids is None or pid in product_ids):
             groups[(pid, m.attribute)].append(m)
 
+    if distance_threshold is None:
+        distance_threshold = embedder.default_threshold
     clusters: list[Cluster] = []
     for (pid, attribute), items in sorted(groups.items()):
         if len(items) < min_size:
@@ -164,7 +166,7 @@ def extract_issues(
     mentions: list[Mention],
     embedder: Embedder,
     own_product_ids: set[str],
-    distance_threshold: float = 0.6,
+    distance_threshold: float | None = None,
     min_size: int = Thresholds.min_issue_size,
 ) -> list[Issue]:
     """Весь шаг 6: кластеры своих товаров → формулировки → проблемы."""

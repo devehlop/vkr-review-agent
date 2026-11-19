@@ -17,6 +17,9 @@ import numpy as np
 
 class Embedder(Protocol):
     name: str
+    # Порог косинусного расстояния для кластеризации по умолчанию: у разных
+    # способов представления расстояния разные. Подбирается на тестировании.
+    default_threshold: float
 
     def embed(self, texts: list[str]) -> np.ndarray:
         """Матрица (число текстов × размерность), строки нормированы по длине."""
@@ -31,6 +34,8 @@ def _normalize(x: np.ndarray) -> np.ndarray:
 
 class TfidfEmbedder:
     name = "tfidf-char"
+    # Символьные n-граммы дают большие расстояния даже между похожими фразами
+    default_threshold = 0.8
 
     def __init__(self, ngram_range: tuple[int, int] = (2, 5)):
         self.ngram_range = ngram_range
@@ -47,6 +52,8 @@ class TfidfEmbedder:
 
 
 class SentenceTransformerEmbedder:
+    default_threshold = 0.5
+
     def __init__(self, model: str = "cointegrated/rubert-tiny2"):
         from sentence_transformers import SentenceTransformer
 
