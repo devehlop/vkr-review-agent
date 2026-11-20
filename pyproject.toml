@@ -2,7 +2,7 @@
 name = "review-agent"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["requests", "jsonschema", "openpyxl", "razdel"]
+dependencies = ["requests", "jsonschema", "openpyxl", "razdel", "numpy"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

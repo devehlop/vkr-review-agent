@@ -104,3 +104,27 @@ class GigaChatClient:
             completion_tokens=usage.get("completion_tokens", 0),
             model=данные.get("model", self.model),
         )
+
+    def embed(self, texts: list[str], *, model: str = "Embeddings",
+              размер_пакета: int = 50) -> list[list[float]]:
+        """Векторные представления текстов (POST /v1/embeddings), порядок сохраняется."""
+        векторы: list[list[float]] = []
+        for начало in range(0, len(texts), размер_пакета):
+            пакет = texts[начало:начало + размер_пакета]
+            resp = self._http.post(
+                f"{API_URL}/v1/embeddings",
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {self._получить_токен()}",
+                },
+                json={"model": model, "input": пакет},
+                verify=self._verify, timeout=self._timeout,
+            )
+            if resp.status_code != 200:
+                raise GigaChatError(f"Ошибка получения эмбеддингов: HTTP {resp.status_code}")
+            данные = sorted(resp.json()["data"], key=lambda д: д["index"])
+            if len(данные) != len(пакет):
+                raise GigaChatError("Число эмбеддингов не совпало с числом текстов")
+            векторы.extend(д["embedding"] for д in данные)
+        return векторы

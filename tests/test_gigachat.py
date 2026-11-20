@@ -98,3 +98,13 @@ def test_строгий_режим_добавляет_response_format_тольк
 def test_finish_reason_читается():
     сессия = ФейковаяСессия([токен(), ответ_модели()])
     assert GigaChatClient("ключ", session=сессия).chat([Message("user", "а")]).finish_reason == "length"
+
+
+def test_эмбеддинги_порядок_и_пакеты():
+    def ответ(индексы):
+        return ФейковыйОтвет(200, {"data": [{"index": i, "embedding": [float(i)]} for i in индексы]})
+    # сервер вернул первый пакет в обратном порядке
+    сессия = ФейковаяСессия([токен(), ответ([1, 0]), ответ([0])])
+    векторы = GigaChatClient("ключ", session=сессия).embed(["а", "б", "в"], размер_пакета=2)
+    assert векторы == [[0.0], [1.0], [0.0]]
+    assert сессия.вызовы[1][1]["json"] == {"model": "Embeddings", "input": ["а", "б"]}
