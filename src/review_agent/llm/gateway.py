@@ -46,10 +46,86 @@ CREATE TABLE IF NOT EXISTS llm_call (
 """
 
 
-def _разобрать_json(text: str) -> Any:
-    """Достаёт JSON из ответа; модели часто оборачивают его в ```json ... ```."""
+_ПАРА = {"}": "{", "]": "["}
+_ЗАКРЫТИЕ = {"{": "}", "[": "]"}
+
+
+def починить_скобки(text: str) -> str:
+    """Чинит типичную ошибку LLM: пропущенные закрывающие скобки в JSON.
+
+    Идёт по тексту со стеком открытых скобок (строки пропускаются). Если закрывающая
+    скобка не подходит к верхней открытой, недостающие закрывающие вставляются перед ней;
+    если текст кончился раньше, закрывающие дописываются в конце. Содержимое строк и
+    значения не меняются. Результат всё равно проверяется по схеме.
+    """
     очищенный = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
-    return json.loads(очищенный)
+    стек: list[str] = []
+    результат: list[str] = []
+    в_строке = False
+    экран = False
+    for символ in очищенный:
+        if в_строке:
+            результат.append(символ)
+            if экран:
+                экран = False
+            elif символ == "\\":
+                экран = True
+            elif символ == '"':
+                в_строке = False
+            continue
+        if символ == '"':
+            в_строке = True
+        elif символ in _ЗАКРЫТИЕ:
+            стек.append(символ)
+        elif символ in _ПАРА:
+            if _ПАРА[символ] in стек:
+                while стек and стек[-1] != _ПАРА[символ]:
+                    результат.append(_ЗАКРЫТИЕ[стек.pop()])
+                стек.pop()
+            else:
+                continue          # лишняя закрывающая скобка без пары: выбрасываем
+        результат.append(символ)
+    if в_строке:
+        результат.append('"')
+    результат.extend(_ЗАКРЫТИЕ[с] for с in reversed(стек))
+    return "".join(результат)
+
+
+def _разобрать_json(text: str) -> tuple[Any, bool]:
+    """Достаёт JSON из ответа (модели часто оборачивают его в ```json ... ```).
+
+    Возвращает (данные, были_ли_починены_скобки).
+    """
+    очищенный = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
+    try:
+        return json.loads(очищенный), False
+    except json.JSONDecodeError:
+        return json.loads(починить_скобки(text)), True
+
+
+class LLMGatewayError(RuntimeError):
+    """Все попытки исчерпаны. Вызывающий код может пропустить запись и идти дальше."""
+
+
+@dataclass
+class GatewayResult:
+    text: str
+    data: Any = None          # разобранный JSON, если передана схема
+    from_cache: bool = False
+
+
+_СХЕМА_БД = """
+CREATE TABLE IF NOT EXISTS llm_cache (
+    key TEXT PRIMARY KEY, text TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS llm_call (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts REAL NOT NULL, step TEXT NOT NULL, model TEXT NOT NULL,
+    tokens_in INTEGER NOT NULL, tokens_out INTEGER NOT NULL,
+    cost REAL NOT NULL, latency REAL NOT NULL,
+    from_cache INTEGER NOT NULL, ok INTEGER NOT NULL, error TEXT
+);
+"""
 
 
 class LLMGateway:
@@ -104,7 +180,7 @@ class LLMGateway:
         if строка:
             текст = строка[0]
             self._записать_вызов(step, 0, 0, 0.0, from_cache=True, ok=True)
-            return GatewayResult(текст, _разобрать_json(текст) if schema else None, True)
+            return GatewayResult(текст, _разобрать_json(текст)[0] if schema else None, True)
 
         последняя_ошибка = ""
         for попытка in range(self._max_retries):
@@ -118,9 +194,9 @@ class LLMGateway:
                                           json_schema=schema)
                 диагностика = (f"длина={len(ответ.text)}, finish_reason={ответ.finish_reason or '?'}, "
                                f"начало={ответ.text[:120]!r}, конец={ответ.text[-120:]!r}")
-                данные = None
+                данные, починен = None, False
                 if schema is not None:
-                    данные = _разобрать_json(ответ.text)
+                    данные, починен = _разобрать_json(ответ.text)
                     jsonschema.validate(данные, schema)
             except Exception as e:  # сеть, HTTP-ошибка, битый JSON, нарушение схемы
                 последняя_ошибка = f"{type(e).__name__}: {e}"[:200]
@@ -133,7 +209,8 @@ class LLMGateway:
                 continue
             self._db.execute("INSERT OR REPLACE INTO llm_cache VALUES (?, ?)", (ключ, ответ.text))
             self._записать_вызов(step, ответ.prompt_tokens, ответ.completion_tokens,
-                                 time.time() - начало, from_cache=False, ok=True)
+                                 time.time() - начало, from_cache=False, ok=True,
+                                 error="починены скобки JSON" if починен else None)
             return GatewayResult(ответ.text, данные)
 
         raise LLMGatewayError(
@@ -155,7 +232,8 @@ class LLMGateway:
         с_id = 0 if весь_журнал else self._старт_id
         в = self._db.execute(
             "SELECT COUNT(*), COALESCE(SUM(from_cache),0), COALESCE(SUM(1-ok),0),"
-            " COALESCE(SUM(tokens_in),0), COALESCE(SUM(tokens_out),0), COALESCE(SUM(cost),0)"
+            " COALESCE(SUM(tokens_in),0), COALESCE(SUM(tokens_out),0), COALESCE(SUM(cost),0),"
+            " COALESCE(SUM(ok = 1 AND error LIKE 'починены%'), 0)"
             " FROM llm_call WHERE id > ?", (с_id,)).fetchone()
         return {"calls": в[0], "cache_hits": в[1], "errors": в[2],
-                "tokens_in": в[3], "tokens_out": в[4], "cost": в[5]}
+                "tokens_in": в[3], "tokens_out": в[4], "cost": в[5], "repaired": в[6]}

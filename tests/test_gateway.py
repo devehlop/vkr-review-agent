@@ -1,4 +1,6 @@
 """Тесты LLM-шлюза: модель подменена заглушкой, сеть не нужна."""
+import json
+
 import pytest
 
 from review_agent.llm.base import FakeLLMClient, LLMResponse, Message
@@ -99,3 +101,30 @@ def test_температура_растёт_на_повторах_после_н
     g = шлюз(клиент, max_retries=3)
     g.complete("а", СООБЩЕНИЕ, schema=СХЕМА, temperature=0.0)
     assert клиент.temperatures == [0.0, pytest.approx(0.3), pytest.approx(0.6)]
+
+
+from review_agent.llm.gateway import починить_скобки  # noqa: E402
+
+
+def test_починка_реального_сбоя_пропущена_фигурная_скобка():
+    # так закончился ответ GigaChat: вместо `}]}]}` модель написала `]]}`
+    сломанный = '{"items": [{"i": 1, "mentions": [{"attribute": "Ткань", "sentiment": "negative"}]]}'
+    assert json.loads(починить_скобки(сломанный)) == {"items": [{"i": 1, "mentions": [
+        {"attribute": "Ткань", "sentiment": "negative"}]}]}
+
+
+def test_починка_обрезанного_ответа_и_строк_со_скобками():
+    assert json.loads(починить_скобки('{"a": [1, 2')) == {"a": [1, 2]}
+    assert json.loads(починить_скобки('{"t": "скобка ] внутри строки", "b": [1')) == {
+        "t": "скобка ] внутри строки", "b": [1]}
+
+
+def test_лишняя_закрывающая_скобка_выбрасывается():
+    assert json.loads(починить_скобки('{"a": 1}}')) == {"a": 1}
+
+
+def test_шлюз_принимает_починенный_ответ_и_считает_починки():
+    сломанный = '{"аспект": "цвет"]}'
+    g = шлюз(FakeLLMClient([сломанный]), max_retries=1)
+    r = g.complete("а", СООБЩЕНИЕ, schema=СХЕМА)
+    assert r.data == {"аспект": "цвет"} and g.stats()["repaired"] == 1 and g.stats()["errors"] == 0
