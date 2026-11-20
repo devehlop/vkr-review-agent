@@ -108,3 +108,33 @@ def test_эмбеддинги_порядок_и_пакеты():
     векторы = GigaChatClient("ключ", session=сессия).embed(["а", "б", "в"], размер_пакета=2)
     assert векторы == [[0.0], [1.0], [0.0]]
     assert сессия.вызовы[1][1]["json"] == {"model": "Embeddings", "input": ["а", "б"]}
+
+
+import requests  # noqa: E402
+
+
+class СбойныйТранспорт(ФейковаяСессия):
+    """Первые n вызовов падают сетевой ошибкой, дальше отвечают как обычная сессия."""
+    def __init__(self, падений, ответы):
+        super().__init__(ответы)
+        self.падений = падений
+
+    def post(self, url, **kwargs):
+        if self.падений > 0:
+            self.падений -= 1
+            raise requests.exceptions.SSLError("UNEXPECTED_EOF_WHILE_READING")
+        return super().post(url, **kwargs)
+
+
+def test_сетевой_сбой_повторяется_и_запрос_проходит():
+    сессия = СбойныйТранспорт(2, [токен(), ответ_модели()])
+    клиент = GigaChatClient("ключ", session=сессия, sleep=lambda _: None)
+    assert клиент.chat([Message("user", "а")]).text == "привет"
+
+
+def test_нет_связи_после_всех_попыток_это_понятная_ошибка_без_ключа():
+    сессия = СбойныйТранспорт(10, [])
+    клиент = GigaChatClient("секретный-ключ", session=сессия, sleep=lambda _: None)
+    with pytest.raises(GigaChatError) as e:
+        клиент.chat([Message("user", "а")])
+    assert "Нет связи" in str(e.value) and "секретный-ключ" not in str(e.value)

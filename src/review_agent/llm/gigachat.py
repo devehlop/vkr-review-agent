@@ -32,7 +32,8 @@ class GigaChatClient:
     def __init__(self, credentials: str | None = None, *,
                  model: str = "GigaChat-2-Pro", scope: str = "GIGACHAT_API_PERS",
                  ca_bundle: str | None = None, timeout: float = 60.0,
-                 structured_output: bool = False,
+                 structured_output: bool = False, сетевых_повторов: int = 3,
+                 пауза: float = 2.0, sleep=time.sleep,
                  session: requests.Session | None = None):
         self._credentials = credentials or os.environ.get("GIGACHAT_CREDENTIALS", "")
         if not self._credentials:
@@ -42,6 +43,9 @@ class GigaChatClient:
         # verify=путь к сертификату Минцифры; проверку TLS не отключаем.
         self._verify = ca_bundle or os.environ.get("GIGACHAT_CA_BUNDLE") or True
         self._timeout = timeout
+        self._повторов = сетевых_повторов
+        self._пауза = пауза
+        self._sleep = sleep
         # Строгий режим response_format=json_schema: сервер сам следит за валидностью JSON.
         # Выключен по умолчанию: поддержку схем нужно проверить на своей модели.
         self._structured = structured_output
@@ -49,10 +53,25 @@ class GigaChatClient:
         self._token = ""
         self._token_expires = 0.0  # время в секундах (time.time())
 
+    def _post(self, url: str, **kwargs):
+        """POST с повтором при сетевых сбоях (обрыв TLS, сброс соединения, таймаут).
+
+        Ответы сервера с кодами ошибок (401, 429 и т. д.) не повторяются: их разбирает
+        вызывающий код. Тексты исключений не содержат ключей и токенов.
+        """
+        for попытка in range(self._повторов):
+            try:
+                return self._http.post(url, **kwargs)
+            except (requests.ConnectionError, requests.Timeout) as e:
+                if попытка == self._повторов - 1:
+                    raise GigaChatError(
+                        f"Нет связи с GigaChat после {self._повторов} попыток: {type(e).__name__}") from e
+                self._sleep(self._пауза * 2 ** попытка)
+
     def _получить_токен(self) -> str:
         if self._token and time.time() < self._token_expires - ЗАПАС_СЕКУНД:
             return self._token
-        resp = self._http.post(
+        resp = self._post(
             OAUTH_URL,
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -83,7 +102,7 @@ class GigaChatClient:
         }
         if json_schema is not None and self._structured:
             тело["response_format"] = {"type": "json_schema", "schema": json_schema, "strict": True}
-        resp = self._http.post(
+        resp = self._post(
             f"{API_URL}/v1/chat/completions",
             headers={
                 "Content-Type": "application/json",
@@ -111,7 +130,7 @@ class GigaChatClient:
         векторы: list[list[float]] = []
         for начало in range(0, len(texts), размер_пакета):
             пакет = texts[начало:начало + размер_пакета]
-            resp = self._http.post(
+            resp = self._post(
                 f"{API_URL}/v1/embeddings",
                 headers={
                     "Content-Type": "application/json",
