@@ -65,7 +65,7 @@ def main(аргументы: list[str] | None = None, клиент=None) -> int:
         print(f"  ошибка [{шаг}]: {ошибка}")
     s = шлюз.stats()
     print(f"\nСохранено в {а.out}. Вызовов: {s['calls']} (из кэша {s['cache_hits']}, "
-          f"ошибок {s['errors']}), токенов: {s['tokens_in']} + {s['tokens_out']}")
+          f"ошибок {s['errors']}, починено скобок {s['repaired']}), токенов: {s['tokens_in']} + {s['tokens_out']}")
     return 0
 
 
