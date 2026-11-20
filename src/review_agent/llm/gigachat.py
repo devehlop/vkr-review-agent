@@ -24,6 +24,17 @@ API_URL = "https://api.giga.chat"
 ЗАПАС_СЕКУНД = 60
 
 
+def _сообщение_об_ошибке(что: str, код: int) -> str:
+    """Короткое объяснение кода ответа (без ключей и токенов)."""
+    подсказки = {
+        401: "ключ или токен недействителен",
+        402: "закончились токены этой модели (для эмбеддингов квота отдельная), проверьте остаток в личном кабинете",
+        403: "нет доступа к методу или модели",
+        429: "слишком много запросов или исчерпан лимит",
+    }
+    return f"{что}: HTTP {код}" + (f" ({подсказки[код]})" if код in подсказки else "")
+
+
 class GigaChatError(RuntimeError):
     """Ошибка обращения к GigaChat (без ключей и токенов в тексте)."""
 
@@ -83,7 +94,7 @@ class GigaChatClient:
             verify=self._verify, timeout=self._timeout,
         )
         if resp.status_code != 200:
-            raise GigaChatError(f"Не удалось получить токен: HTTP {resp.status_code}")
+            raise GigaChatError(_сообщение_об_ошибке("Не удалось получить токен", resp.status_code))
         данные = resp.json()
         self._token = данные["access_token"]
         # В документации пример в секундах, в реальных ответах бывают миллисекунды:
@@ -113,7 +124,7 @@ class GigaChatClient:
             verify=self._verify, timeout=self._timeout,
         )
         if resp.status_code != 200:
-            raise GigaChatError(f"Ошибка запроса к модели: HTTP {resp.status_code}")
+            raise GigaChatError(_сообщение_об_ошибке("Ошибка запроса к модели", resp.status_code))
         данные = resp.json()
         usage = данные.get("usage", {})
         return LLMResponse(
@@ -141,7 +152,7 @@ class GigaChatClient:
                 verify=self._verify, timeout=self._timeout,
             )
             if resp.status_code != 200:
-                raise GigaChatError(f"Ошибка получения эмбеддингов: HTTP {resp.status_code}")
+                raise GigaChatError(_сообщение_об_ошибке("Ошибка получения эмбеддингов", resp.status_code))
             данные = sorted(resp.json()["data"], key=lambda д: д["index"])
             if len(данные) != len(пакет):
                 raise GigaChatError("Число эмбеддингов не совпало с числом текстов")

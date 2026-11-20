@@ -138,3 +138,10 @@ def test_нет_связи_после_всех_попыток_это_понят�
     with pytest.raises(GigaChatError) as e:
         клиент.chat([Message("user", "а")])
     assert "Нет связи" in str(e.value) and "секретный-ключ" not in str(e.value)
+
+
+def test_402_объясняется_понятно():
+    с = ФейковаяСессия([токен(), ФейковыйОтвет(402)])
+    with pytest.raises(GigaChatError) as e:
+        GigaChatClient("ключ", session=с).embed(["а"])
+    assert "HTTP 402" in str(e.value) and "закончились токены" in str(e.value)

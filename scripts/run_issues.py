@@ -1,7 +1,8 @@
 """Шаг 6: выделение проблем своего товара по негативным упоминаниям.
 
 Нужны: файл с отзывами, mentions.json (run_extract.py) и справочник (категория).
-Вызывает GigaChat: эмбеддинги цитат и по одному запросу на название каждой проблемы.
+Эмбеддинги цитат считаются локально (--embedder local, по умолчанию) или в GigaChat;
+название каждой проблемы формулирует GigaChat (один запрос на проблему).
 Пример:
     python scripts/run_issues.py data/synthetic_reviews.csv --product "Куртка" \
         --taxonomy data/taxonomy_synthetic_v2.json --mentions data/mentions.json
@@ -17,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from review_agent.ingest.loader import загрузить  # noqa: E402
-from review_agent.llm.embeddings import GigaChatEmbedder  # noqa: E402
+from review_agent.llm.embeddings import GigaChatEmbedder, LocalEmbedder  # noqa: E402
 from review_agent.llm.gateway import LLMGateway  # noqa: E402
 from review_agent.llm.gigachat import GigaChatClient  # noqa: E402
 from review_agent.pipeline.extract import Упоминание  # noqa: E402
@@ -36,7 +37,10 @@ def main(аргументы: list[str] | None = None, клиент=None, эмб�
     р.add_argument("--threshold", type=float, default=0.35, help="порог косинусного расстояния")
     р.add_argument("--min-size", type=int, default=3, help="минимум упоминаний в проблеме")
     р.add_argument("--model", default="GigaChat-2-Pro")
-    р.add_argument("--embeddings-model", default="Embeddings")
+    р.add_argument("--embedder", choices=("local", "gigachat"), default="local",
+                   help="local: модель на вашем компьютере (бесплатно); gigachat: нужен платный пакет")
+    р.add_argument("--embeddings-model", default=None,
+                   help="название модели эмбеддингов (по умолчанию: e5-small для local, Embeddings для gigachat)")
     р.add_argument("--db", default=".cache/llm.sqlite")
     а = р.parse_args(аргументы)
 
@@ -52,7 +56,10 @@ def main(аргументы: list[str] | None = None, клиент=None, эмб�
     Path(а.db).parent.mkdir(parents=True, exist_ok=True)
     gc = клиент or GigaChatClient(model=а.model)
     шлюз = LLMGateway(gc, db_path=а.db)
-    итог = выделить_проблемы(шлюз, эмбеддер or GigaChatEmbedder(gc, а.embeddings_model), упоминания,
+    if эмбеддер is None:
+        эмбеддер = (GigaChatEmbedder(gc, а.embeddings_model or "Embeddings") if а.embedder == "gigachat"
+                    else LocalEmbedder(а.embeddings_model) if а.embeddings_model else LocalEmbedder())
+    итог = выделить_проблемы(шлюз, эмбеддер, упоминания,
                              категория=справочник.category, всего_отзывов=len(отзывы),
                              порог=а.threshold, мин_размер=а.min_size)
 
