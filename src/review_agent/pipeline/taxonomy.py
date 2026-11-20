@@ -16,7 +16,7 @@ from review_agent.llm.base import Message
 from review_agent.llm.gateway import LLMGateway
 from review_agent.prompts import загрузить_промпт
 
-ВЕРСИЯ_ПРОМПТА = "taxonomy_v1"
+ВЕРСИЯ_ПРОМПТА = "taxonomy_v2"
 МАКС_ДЛИНА_ОТЗЫВА = 400   # символов; длинные отзывы обрезаем, чтобы не раздувать запрос
 
 СХЕМА = {
