@@ -34,6 +34,11 @@ def main(аргументы: list[str] | None = None, клиент=None) -> int:
     р.add_argument("--db", default=".cache/llm.sqlite", help="кэш и журнал вызовов модели")
     а = р.parse_args(аргументы)
 
+    if not Path(а.файл).is_file():
+        print(f"Файл не найден: {а.файл}. Укажите путь к вашей выгрузке отзывов (CSV или XLSX).",
+              file=sys.stderr)
+        return 2
+
     отзывы = загрузить(а.файл, product=а.product)
     результат = предобработать(отзывы)
     print("Предобработка:", результат.stats)

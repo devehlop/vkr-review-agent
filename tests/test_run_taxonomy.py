@@ -39,3 +39,10 @@ def test_пустой_файл_после_очистки(tmp_path):
     assert загрузить_скрипт().main(
         [str(csv), "--product", "X", "--category", "Y", "--db", str(tmp_path / "c.sqlite")],
         клиент=FakeLLMClient([])) == 1
+
+
+def test_несуществующий_файл_даёт_понятную_ошибку(tmp_path, capsys):
+    код = загрузить_скрипт().main(
+        [str(tmp_path / "нет.csv"), "--product", "X", "--category", "Y"],
+        клиент=FakeLLMClient([]))
+    assert код == 2 and "Файл не найден" in capsys.readouterr().err
