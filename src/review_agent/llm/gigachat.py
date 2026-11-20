@@ -99,6 +99,7 @@ class GigaChatClient:
         usage = данные.get("usage", {})
         return LLMResponse(
             text=данные["choices"][0]["message"]["content"],
+            finish_reason=данные["choices"][0].get("finish_reason") or "",
             prompt_tokens=usage.get("prompt_tokens", 0),
             completion_tokens=usage.get("completion_tokens", 0),
             model=данные.get("model", self.model),

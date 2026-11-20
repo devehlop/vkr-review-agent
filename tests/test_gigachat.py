@@ -33,7 +33,7 @@ def токен(секунд=1800):
 def ответ_модели():
     return ФейковыйОтвет(200, {
         "model": "GigaChat-2-Pro",
-        "choices": [{"message": {"content": "привет"}}],
+        "choices": [{"message": {"content": "привет"}, "finish_reason": "length"}],
         "usage": {"prompt_tokens": 5, "completion_tokens": 1},
     })
 
@@ -93,3 +93,8 @@ def test_строгий_режим_добавляет_response_format_тольк
     вкл = ФейковаяСессия([токен(), ответ_модели()])
     GigaChatClient("ключ", session=вкл, structured_output=True).chat([Message("user", "а")], json_schema=схема)
     assert вкл.вызовы[-1][1]["json"]["response_format"] == {"type": "json_schema", "schema": схема, "strict": True}
+
+
+def test_finish_reason_читается():
+    сессия = ФейковаяСессия([токен(), ответ_модели()])
+    assert GigaChatClient("ключ", session=сессия).chat([Message("user", "а")]).finish_reason == "length"

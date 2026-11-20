@@ -19,6 +19,7 @@ class LLMResponse:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     model: str = ""
+    finish_reason: str = ""   # stop = закончил сам; length = обрезан по лимиту токенов
 
 
 class LLMClient(Protocol):

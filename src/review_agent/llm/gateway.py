@@ -109,22 +109,23 @@ class LLMGateway:
         последняя_ошибка = ""
         for попытка in range(self._max_retries):
             начало = time.time()
-            фрагмент = ""
+            диагностика = ""
             try:
                 # При температуре 0 модель повторяет тот же ответ, поэтому после сбоя
                 # на следующих попытках температура немного растёт.
                 t = temperature if попытка == 0 else min(1.0, temperature + 0.3 * попытка)
                 ответ = self._client.chat(messages, temperature=t, max_tokens=max_tokens,
                                           json_schema=schema)
-                фрагмент = ответ.text[:200]
+                диагностика = (f"длина={len(ответ.text)}, finish_reason={ответ.finish_reason or '?'}, "
+                               f"начало={ответ.text[:120]!r}, конец={ответ.text[-120:]!r}")
                 данные = None
                 if schema is not None:
                     данные = _разобрать_json(ответ.text)
                     jsonschema.validate(данные, schema)
             except Exception as e:  # сеть, HTTP-ошибка, битый JSON, нарушение схемы
-                последняя_ошибка = f"{type(e).__name__}: {e}"[:300]
-                if фрагмент:   # для диагностики: начало ответа, который не прошёл проверку
-                    последняя_ошибка += f" | ответ: {фрагмент!r}"
+                последняя_ошибка = f"{type(e).__name__}: {e}"[:200]
+                if диагностика:   # для диагностики: что именно пришло и чем закончилось
+                    последняя_ошибка += f" | {диагностика}"
                 self._записать_вызов(step, 0, 0, time.time() - начало,
                                      from_cache=False, ok=False, error=последняя_ошибка)
                 if попытка < self._max_retries - 1:
