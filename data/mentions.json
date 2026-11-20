@@ -1,0 +1,922 @@
+[
+ {
+  "review_id": "s001",
+  "sentence_idx": 0,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Цвет темнее, чем на фото",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s001",
+  "sentence_idx": 1,
+  "attribute": "Доставка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "доставка шла две недели",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s002",
+  "sentence_idx": 0,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Швы ровные, нитки нигде не торчат",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s002",
+  "sentence_idx": 1,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "курьер привёз раньше срока",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s003",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Доставка шла две недели",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s003",
+  "sentence_idx": 1,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "пришла в порванном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s004",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Упаковано аккуратно, в плотном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s004",
+  "sentence_idx": 1,
+  "attribute": "Материал и фактура",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "ткань мягкая и приятная к телу",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s005",
+  "sentence_idx": 0,
+  "attribute": "Материал и фактура",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Ткань мягкая и приятная к телу",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s006",
+  "sentence_idx": 0,
+  "attribute": "Цена-качество",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "За такую цену отличное качество",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s006",
+  "sentence_idx": 1,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "цвет как на фото",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s006",
+  "sentence_idx": 2,
+  "attribute": "Посадка и размер",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Маломерит, пришлось брать на размер больше",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s007",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Доставили быстро",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s007",
+  "sentence_idx": 1,
+  "attribute": "Упаковка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "упаковано аккуратно, в плотном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s008",
+  "sentence_idx": 0,
+  "attribute": "Материал и фактура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Синтетика, электризуется",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s008",
+  "sentence_idx": 1,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "коробка помята",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s009",
+  "sentence_idx": 0,
+  "attribute": "Цена-качество",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "За такую цену отличное качество",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s009",
+  "sentence_idx": 1,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "качественный пошив, фурнитура крепкая",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s009",
+  "sentence_idx": 1,
+  "attribute": "Фурнитура",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "качественный пошив, фурнитура крепкая",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s010",
+  "sentence_idx": 0,
+  "attribute": "Долговечность и уход",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Не мнётся после стирки",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s010",
+  "sentence_idx": 1,
+  "attribute": "Посадка и размер",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "сидит идеально по фигуре",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s010",
+  "sentence_idx": 2,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Коробка помята",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s011",
+  "sentence_idx": 0,
+  "attribute": "Долговечность и уход",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "После стирки села",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s011",
+  "sentence_idx": 1,
+  "attribute": "Доставка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "доставка шла две недели",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s012",
+  "sentence_idx": 1,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Пришла в порванном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s012",
+  "sentence_idx": 2,
+  "attribute": "Материал и фактура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "ткань тонкая, в ветер продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s012",
+  "sentence_idx": 2,
+  "attribute": "Комфорт и функциональность",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "ткань тонкая, в ветер продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s014",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Упаковано аккуратно, в плотном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s014",
+  "sentence_idx": 2,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Цвет темнее, чем на фото",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s014",
+  "sentence_idx": 3,
+  "attribute": "Длина и пропорции",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "рукава коротковаты",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s015",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Доставили быстро",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s016",
+  "sentence_idx": 0,
+  "attribute": "Материал и фактура",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Материал плотный, не продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s016",
+  "sentence_idx": 0,
+  "attribute": "Комфорт и функциональность",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Материал плотный, не продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s016",
+  "sentence_idx": 1,
+  "attribute": "Качество пошива",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Торчат нитки, шов кривой",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s016",
+  "sentence_idx": 1,
+  "attribute": "Фурнитура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Торчат нитки, шов кривой",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s019",
+  "sentence_idx": 2,
+  "attribute": "Посадка и размер",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Маломерит, пришлось брать на размер больше",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s020",
+  "sentence_idx": 0,
+  "attribute": "Долговечность и уход",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "После стирки села",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s021",
+  "sentence_idx": 0,
+  "attribute": "Материал и фактура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Синтетика, электризуется",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s023",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Упаковано аккуратно, в плотном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s024",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Доставили быстро",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s024",
+  "sentence_idx": 1,
+  "attribute": "Посадка и размер",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "сидит идеально по фигуре",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s025",
+  "sentence_idx": 0,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Оттенок отличается от заявленного",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s026",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Доставили быстро",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s026",
+  "sentence_idx": 1,
+  "attribute": "Материал и фактура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Синтетика, электризуется",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s026",
+  "sentence_idx": 2,
+  "attribute": "Цена-качество",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "дороговато для такого качества",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s027",
+  "sentence_idx": 0,
+  "attribute": "Посадка и размер",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Размер в размер",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s029",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Упаковано аккуратно, в плотном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s029",
+  "sentence_idx": 1,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "доставили быстро",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s030",
+  "sentence_idx": 0,
+  "attribute": "Посадка и размер",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Размер в размер",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s030",
+  "sentence_idx": 1,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "швы ровные, нитки нигде не торчат",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s030",
+  "sentence_idx": 2,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Цвет темнее, чем на фото",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s030",
+  "sentence_idx": 3,
+  "attribute": "Фурнитура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "молния заедает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s031",
+  "sentence_idx": 0,
+  "attribute": "Посадка и размер",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Маломерит, пришлось брать на размер больше",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s031",
+  "sentence_idx": 1,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "цвет темнее, чем на фото",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s032",
+  "sentence_idx": 0,
+  "attribute": "Материал и фактура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Синтетика, электризуется",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s032",
+  "sentence_idx": 1,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "оттенок отличается от заявленного",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s034",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Пришла в порванном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s034",
+  "sentence_idx": 1,
+  "attribute": "Цена-качество",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "дороговато для такого качества",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s035",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Доставили быстро",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s035",
+  "sentence_idx": 1,
+  "attribute": "Материал и фактура",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "материал плотный, не продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s035",
+  "sentence_idx": 1,
+  "attribute": "Комфорт и функциональность",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "материал плотный, не продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s036",
+  "sentence_idx": 0,
+  "attribute": "Долговечность и уход",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "После стирки села",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s036",
+  "sentence_idx": 1,
+  "attribute": "Цена-качество",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "за эти деньги ожидала большего",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s038",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Коробка помята",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s039",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Упаковано аккуратно, в плотном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s039",
+  "sentence_idx": 1,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "швы ровные, нитки нигде не торчат",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s040",
+  "sentence_idx": 0,
+  "attribute": "Цвет и оттенок",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Красивый насыщенный оттенок",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s040",
+  "sentence_idx": 1,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "швы ровные, нитки нигде не торчат",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s041",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Коробка помята",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s041",
+  "sentence_idx": 1,
+  "attribute": "Качество пошива",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "торчат нитки, шов кривой",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s043",
+  "sentence_idx": 0,
+  "attribute": "Цена-качество",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "За эти деньги ожидала большего",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s043",
+  "sentence_idx": 1,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "пришла в порванном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s044",
+  "sentence_idx": 0,
+  "attribute": "Цена-качество",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "За такую цену отличное качество",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s046",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Курьер привёз раньше срока",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s046",
+  "sentence_idx": 1,
+  "attribute": "Посадка и размер",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "сидит идеально по фигуре",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s047",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Курьер задержался на три дня",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s047",
+  "sentence_idx": 1,
+  "attribute": "Цена-качество",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "за эти деньги ожидала большего",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s048",
+  "sentence_idx": 0,
+  "attribute": "Упаковка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Упаковано аккуратно, в плотном пакете",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s048",
+  "sentence_idx": 1,
+  "attribute": "Цена-качество",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "цена полностью оправдана",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s048",
+  "sentence_idx": 2,
+  "attribute": "Упаковка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Коробка помята",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s048",
+  "sentence_idx": 3,
+  "attribute": "Цена-качество",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "за эти деньги ожидала большего",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s049",
+  "sentence_idx": 0,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Швы ровные, нитки нигде не торчат",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s049",
+  "sentence_idx": 1,
+  "attribute": "Материал и фактура",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "материал плотный, не продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s049",
+  "sentence_idx": 1,
+  "attribute": "Комфорт и функциональность",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "материал плотный, не продувает",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s049",
+  "sentence_idx": 2,
+  "attribute": "Материал и фактура",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "Синтетика, электризуется",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s050",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "pros",
+  "text": "Доставили быстро",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s050",
+  "sentence_idx": 1,
+  "attribute": "Цена-качество",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "За эти деньги ожидала большего",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s050",
+  "sentence_idx": 2,
+  "attribute": "Доставка",
+  "sentiment": "negative",
+  "source": "cons",
+  "text": "курьер задержался на три дня",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s053",
+  "sentence_idx": 0,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "text",
+  "text": "Отличная куртка очень довольна качеством доставка быстрая всем советую покупать сегодня",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s053",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "text",
+  "text": "Отличная куртка очень довольна качеством доставка быстрая всем советую покупать сегодня",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s054",
+  "sentence_idx": 0,
+  "attribute": "Качество пошива",
+  "sentiment": "positive",
+  "source": "text",
+  "text": "Отличная куртка очень довольна качеством доставка быстрая всем советую покупать сейчас",
+  "product": "Куртка",
+  "is_own": true
+ },
+ {
+  "review_id": "s054",
+  "sentence_idx": 0,
+  "attribute": "Доставка",
+  "sentiment": "positive",
+  "source": "text",
+  "text": "Отличная куртка очень довольна качеством доставка быстрая всем советую покупать сейчас",
+  "product": "Куртка",
+  "is_own": true
+ }
+]
