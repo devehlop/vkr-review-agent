@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -43,6 +44,18 @@ class РезультатПроблем:
     stats: dict = field(default_factory=dict)
 
 
+def _уникальные(цитаты: list[str]) -> list[str]:
+    """Цитаты без повторов (регистр и знаки препинания не учитываются), порядок сохраняется."""
+    увиденные: set[str] = set()
+    результат = []
+    for ц in цитаты:
+        ключ = re.sub(r"\W+", " ", ц.lower()).strip()
+        if ключ not in увиденные:
+            увиденные.add(ключ)
+            результат.append(ц)
+    return результат
+
+
 def выделить_проблемы(шлюз: LLMGateway, эмбеддер: Embedder, упоминания: list[Упоминание],
                       *, категория: str, всего_отзывов: int, порог: float = 0.35,
                       мин_размер: int = 3, цитат_для_названия: int = 8,
@@ -72,8 +85,8 @@ def выделить_проблемы(шлюз: LLMGateway, эмбеддер: Em
                 статистика["small_clusters"] += 1
                 статистика["mentions_unassigned"] += len(кластер)
                 continue
-            ближайшие = ближайшие_к_центру(векторы, кластер, max(цитат_для_названия, цитат_в_отчёт))
-            цитаты = [список[i].text for i in ближайшие]
+            ближайшие = ближайшие_к_центру(векторы, кластер, len(кластер))
+            цитаты = _уникальные([список[i].text for i in ближайшие])
             название, ок = _назвать(шлюз, шаблон, категория, атрибут, цитаты[:цитат_для_названия])
             if not ок:
                 статистика["titles_failed"] += 1
