@@ -83,3 +83,13 @@ def test_expires_at_в_секундах_тоже_работает():
     клиент.chat([Message("user", "а")])
     клиент.chat([Message("user", "б")])
     assert sum("oauth" in url for url, _ in сессия.вызовы) == 1
+
+
+def test_строгий_режим_добавляет_response_format_только_если_включён():
+    схема = {"type": "object"}
+    выкл = ФейковаяСессия([токен(), ответ_модели()])
+    GigaChatClient("ключ", session=выкл).chat([Message("user", "а")], json_schema=схема)
+    assert "response_format" not in выкл.вызовы[-1][1]["json"]
+    вкл = ФейковаяСессия([токен(), ответ_модели()])
+    GigaChatClient("ключ", session=вкл, structured_output=True).chat([Message("user", "а")], json_schema=схема)
+    assert вкл.вызовы[-1][1]["json"]["response_format"] == {"type": "json_schema", "schema": схема, "strict": True}

@@ -25,7 +25,7 @@ class LLMClient(Protocol):
     """Интерфейс, который реализуют GigaChat, YandexGPT, Ollama и заглушка."""
 
     def chat(self, messages: list[Message], *, temperature: float = 0.2,
-             max_tokens: int = 1024) -> LLMResponse:
+             max_tokens: int = 1024, json_schema: dict | None = None) -> LLMResponse:
         ...
 
 
@@ -35,10 +35,12 @@ class FakeLLMClient:
     def __init__(self, answers: list[str]):
         self._answers = list(answers)
         self.calls: list[list[Message]] = []
+        self.temperatures: list[float] = []
 
     def chat(self, messages: list[Message], *, temperature: float = 0.2,
-             max_tokens: int = 1024) -> LLMResponse:
+             max_tokens: int = 1024, json_schema: dict | None = None) -> LLMResponse:
         self.calls.append(messages)
+        self.temperatures.append(temperature)
         if not self._answers:
             raise RuntimeError("В заглушке закончились заготовленные ответы")
         return LLMResponse(text=self._answers.pop(0), model="fake")

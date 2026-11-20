@@ -29,9 +29,11 @@ def main(аргументы: list[str] | None = None, клиент=None) -> int:
     р.add_argument("--product", required=True)
     р.add_argument("--taxonomy", required=True, help="JSON справочника (run_taxonomy.py)")
     р.add_argument("--out", default="data/mentions.json")
-    р.add_argument("--batch", type=int, default=25, help="предложений в одном запросе")
+    р.add_argument("--batch", type=int, default=15, help="предложений в одном запросе")
     р.add_argument("--limit", type=int, default=0, help="обработать только первые N предложений")
     р.add_argument("--model", default="GigaChat-2-Pro")
+    р.add_argument("--structured", action="store_true",
+                   help="строгий JSON-режим GigaChat (response_format=json_schema)")
     р.add_argument("--db", default=".cache/llm.sqlite")
     а = р.parse_args(аргументы)
 
@@ -47,7 +49,7 @@ def main(аргументы: list[str] | None = None, клиент=None) -> int:
     print(f"В обработку: {len(предложения)} предложений, пакетами по {а.batch}")
 
     Path(а.db).parent.mkdir(parents=True, exist_ok=True)
-    шлюз = LLMGateway(клиент or GigaChatClient(model=а.model), db_path=а.db)
+    шлюз = LLMGateway(клиент or GigaChatClient(model=а.model, structured_output=а.structured), db_path=а.db)
     итог = извлечь_аспекты(шлюз, предложения, справочник, размер_пакета=а.batch)
 
     Path(а.out).parent.mkdir(parents=True, exist_ok=True)

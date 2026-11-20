@@ -32,6 +32,7 @@ class GigaChatClient:
     def __init__(self, credentials: str | None = None, *,
                  model: str = "GigaChat-2-Pro", scope: str = "GIGACHAT_API_PERS",
                  ca_bundle: str | None = None, timeout: float = 60.0,
+                 structured_output: bool = False,
                  session: requests.Session | None = None):
         self._credentials = credentials or os.environ.get("GIGACHAT_CREDENTIALS", "")
         if not self._credentials:
@@ -41,6 +42,9 @@ class GigaChatClient:
         # verify=путь к сертификату Минцифры; проверку TLS не отключаем.
         self._verify = ca_bundle or os.environ.get("GIGACHAT_CA_BUNDLE") or True
         self._timeout = timeout
+        # Строгий режим response_format=json_schema: сервер сам следит за валидностью JSON.
+        # Выключен по умолчанию: поддержку схем нужно проверить на своей модели.
+        self._structured = structured_output
         self._http = session or requests.Session()
         self._token = ""
         self._token_expires = 0.0  # время в секундах (time.time())
@@ -70,7 +74,15 @@ class GigaChatClient:
         return self._token
 
     def chat(self, messages: list[Message], *, temperature: float = 0.2,
-             max_tokens: int = 1024) -> LLMResponse:
+             max_tokens: int = 1024, json_schema: dict | None = None) -> LLMResponse:
+        тело = {
+            "model": self.model,
+            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if json_schema is not None and self._structured:
+            тело["response_format"] = {"type": "json_schema", "schema": json_schema, "strict": True}
         resp = self._http.post(
             f"{API_URL}/v1/chat/completions",
             headers={
@@ -78,12 +90,7 @@ class GigaChatClient:
                 "Accept": "application/json",
                 "Authorization": f"Bearer {self._получить_токен()}",
             },
-            json={
-                "model": self.model,
-                "messages": [{"role": m.role, "content": m.content} for m in messages],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            },
+            json=тело,
             verify=self._verify, timeout=self._timeout,
         )
         if resp.status_code != 200:

@@ -111,7 +111,11 @@ class LLMGateway:
             начало = time.time()
             фрагмент = ""
             try:
-                ответ = self._client.chat(messages, temperature=temperature, max_tokens=max_tokens)
+                # При температуре 0 модель повторяет тот же ответ, поэтому после сбоя
+                # на следующих попытках температура немного растёт.
+                t = temperature if попытка == 0 else min(1.0, temperature + 0.3 * попытка)
+                ответ = self._client.chat(messages, temperature=t, max_tokens=max_tokens,
+                                          json_schema=schema)
                 фрагмент = ответ.text[:200]
                 данные = None
                 if schema is not None:

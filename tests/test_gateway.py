@@ -18,7 +18,7 @@ class Сбойный:
         self.ответ = ответ
         self.вызовов = 0
 
-    def chat(self, messages, *, temperature=0.2, max_tokens=1024):
+    def chat(self, messages, *, temperature=0.2, max_tokens=1024, json_schema=None):
         self.вызовов += 1
         if self.вызовов <= self.падений:
             raise ConnectionError("сеть")
@@ -91,3 +91,10 @@ def test_ошибки_содержат_начало_ответа_для_диаг
         g.complete("шаг", СООБЩЕНИЕ, schema=СХЕМА)
     шаг, текст = g.ошибки()[0]
     assert шаг == "шаг" and "это не json" in текст and "JSONDecodeError" in текст
+
+
+def test_температура_растёт_на_повторах_после_невалидного_ответа():
+    клиент = FakeLLMClient(["не json", "не json", '{"аспект": "цвет"}'])
+    g = шлюз(клиент, max_retries=3)
+    g.complete("а", СООБЩЕНИЕ, schema=СХЕМА, temperature=0.0)
+    assert клиент.temperatures == [0.0, pytest.approx(0.3), pytest.approx(0.6)]
