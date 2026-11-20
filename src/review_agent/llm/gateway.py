@@ -109,14 +109,18 @@ class LLMGateway:
         последняя_ошибка = ""
         for попытка in range(self._max_retries):
             начало = time.time()
+            фрагмент = ""
             try:
                 ответ = self._client.chat(messages, temperature=temperature, max_tokens=max_tokens)
+                фрагмент = ответ.text[:200]
                 данные = None
                 if schema is not None:
                     данные = _разобрать_json(ответ.text)
                     jsonschema.validate(данные, schema)
             except Exception as e:  # сеть, HTTP-ошибка, битый JSON, нарушение схемы
                 последняя_ошибка = f"{type(e).__name__}: {e}"[:300]
+                if фрагмент:   # для диагностики: начало ответа, который не прошёл проверку
+                    последняя_ошибка += f" | ответ: {фрагмент!r}"
                 self._записать_вызов(step, 0, 0, time.time() - начало,
                                      from_cache=False, ok=False, error=последняя_ошибка)
                 if попытка < self._max_retries - 1:
@@ -129,6 +133,13 @@ class LLMGateway:
 
         raise LLMGatewayError(
             f"Шаг «{step}»: {self._max_retries} попыток неудачны. Последняя ошибка: {последняя_ошибка}")
+
+    def ошибки(self, лимит: int = 5) -> list[tuple[str, str]]:
+        """Последние ошибки текущего запуска: (шаг, текст). Нужны для диагностики."""
+        строки = self._db.execute(
+            "SELECT step, error FROM llm_call WHERE id > ? AND ok = 0 ORDER BY id DESC LIMIT ?",
+            (self._старт_id, лимит)).fetchall()
+        return [(ш, e) for ш, e in строки]
 
     # --- статистика ------------------------------------------------------
     def stats(self, *, весь_журнал: bool = False) -> dict:

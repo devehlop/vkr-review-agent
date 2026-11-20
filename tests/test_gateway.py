@@ -83,3 +83,11 @@ def test_статистика_только_за_текущий_запуск(tmp_
     второй.complete("а", СООБЩЕНИЕ, temperature=0.2)   # другие параметры: кэш не сработает
     assert второй.stats()["calls"] == 1 and второй.stats()["tokens_in"] == 100
     assert второй.stats(весь_журнал=True)["calls"] == 2
+
+
+def test_ошибки_содержат_начало_ответа_для_диагностики():
+    g = шлюз(FakeLLMClient(["это не json, а просто слова"] * 2), max_retries=2)
+    with pytest.raises(LLMGatewayError):
+        g.complete("шаг", СООБЩЕНИЕ, schema=СХЕМА)
+    шаг, текст = g.ошибки()[0]
+    assert шаг == "шаг" and "это не json" in текст and "JSONDecodeError" in текст

@@ -59,6 +59,8 @@ def main(аргументы: list[str] | None = None, клиент=None) -> int:
     for атрибут in справочник.attributes:
         п, о, н = (счёт[(атрибут.name, т)] for т in ("positive", "negative", "neutral"))
         print(f"  {атрибут.name}: +{п} / -{о} / ={н}")
+    for шаг, ошибка in шлюз.ошибки():
+        print(f"  ошибка [{шаг}]: {ошибка}")
     s = шлюз.stats()
     print(f"\nСохранено в {а.out}. Вызовов: {s['calls']} (из кэша {s['cache_hits']}, "
           f"ошибок {s['errors']}), токенов: {s['tokens_in']} + {s['tokens_out']}")

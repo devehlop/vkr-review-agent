@@ -56,6 +56,8 @@ def main(аргументы: list[str] | None = None, клиент=None) -> int:
     print(f"\nСправочник ({len(справочник.attributes)} атрибутов), сохранён в {а.out}:")
     for атрибут in справочник.attributes:
         print(f"  • {атрибут.name}: {', '.join(атрибут.features)}")
+    for шаг, ошибка in шлюз.ошибки():
+        print(f"  ошибка [{шаг}]: {ошибка}")
     s = шлюз.stats()
     print(f"\nВызовов: {s['calls']} (из кэша {s['cache_hits']}, ошибок {s['errors']}), "
           f"токенов: {s['tokens_in']} + {s['tokens_out']}")
