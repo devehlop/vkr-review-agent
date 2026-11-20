@@ -63,8 +63,10 @@ class GigaChatClient:
             raise GigaChatError(f"Не удалось получить токен: HTTP {resp.status_code}")
         данные = resp.json()
         self._token = данные["access_token"]
-        # expires_at приходит в миллисекундах
-        self._token_expires = данные["expires_at"] / 1000
+        # В документации пример в секундах, в реальных ответах бывают миллисекунды:
+        # значения больше 1e11 считаем миллисекундами.
+        истекает = данные["expires_at"]
+        self._token_expires = истекает / 1000 if истекает > 1e11 else float(истекает)
         return self._token
 
     def chat(self, messages: list[Message], *, temperature: float = 0.2,
