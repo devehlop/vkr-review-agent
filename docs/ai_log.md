@@ -9,3 +9,4 @@
 | 27.10.2026 | `docs/architecture.md` | Архитектура целиком: компоненты, конвейер, алгоритмы, выбор LLM, модель данных, диаграммы | — | нет |
 | 20.11.2026 | `src/review_agent/llm/` (base.py, gigachat.py), `tests/test_gigachat.py`, `pyproject.toml` | REST-клиент GigaChat (токен через OAuth с обновлением, chat/completions), интерфейс LLMClient, заглушка, 5 тестов на моках | — | да (тесты на моках; реальный API не проверялся — недоступен из облака) |
 | 20.11.2026 | `src/review_agent/llm/gigachat.py` | Правка разбора `expires_at` (секунды и миллисекунды) по OpenAPI-описанию Сбера + тест | — | да (на моках) |
+| 20.11.2026 | `src/review_agent/llm/gateway.py`, `tests/test_gateway.py` | LLM-шлюз: повторы с задержкой, проверка JSON по схеме, кэш и журнал вызовов в SQLite, статистика стоимости; 6 тестов на заглушке | — | да (тесты на моках; с реальным GigaChat шлюз не запускался) |
