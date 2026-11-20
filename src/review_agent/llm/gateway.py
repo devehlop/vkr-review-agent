@@ -65,6 +65,9 @@ class LLMGateway:
         self._sleep = sleep
         self._db = sqlite3.connect(db_path)
         self._db.executescript(_СХЕМА_БД)
+        # Журнал в файле копится между запусками; статистика по умолчанию считается
+        # только по вызовам этого экземпляра шлюза (с id больше стартового).
+        self._старт_id = self._db.execute("SELECT COALESCE(MAX(id), 0) FROM llm_call").fetchone()[0]
 
     # --- служебное -------------------------------------------------------
     def _модель(self) -> str:
@@ -128,11 +131,15 @@ class LLMGateway:
             f"Шаг «{step}»: {self._max_retries} попыток неудачны. Последняя ошибка: {последняя_ошибка}")
 
     # --- статистика ------------------------------------------------------
-    def stats(self) -> dict:
-        """Итоги по журналу: число вызовов, попаданий в кэш, ошибок, токены, стоимость."""
+    def stats(self, *, весь_журнал: bool = False) -> dict:
+        """Итоги: число вызовов, попаданий в кэш, ошибок, токены, стоимость.
+
+        По умолчанию только за текущий запуск; весь_журнал=True считает все запуски.
+        """
+        с_id = 0 if весь_журнал else self._старт_id
         в = self._db.execute(
             "SELECT COUNT(*), COALESCE(SUM(from_cache),0), COALESCE(SUM(1-ok),0),"
             " COALESCE(SUM(tokens_in),0), COALESCE(SUM(tokens_out),0), COALESCE(SUM(cost),0)"
-            " FROM llm_call").fetchone()
+            " FROM llm_call WHERE id > ?", (с_id,)).fetchone()
         return {"calls": в[0], "cache_hits": в[1], "errors": в[2],
                 "tokens_in": в[3], "tokens_out": в[4], "cost": в[5]}

@@ -73,3 +73,13 @@ def test_без_схемы_возвращает_текст():
     g = шлюз(FakeLLMClient(["просто текст"]))
     r = g.complete("резюме", СООБЩЕНИЕ)
     assert r.text == "просто текст" and r.data is None
+
+
+def test_статистика_только_за_текущий_запуск(tmp_path):
+    путь = str(tmp_path / "журнал.sqlite")
+    первый = LLMGateway(Сбойный(падений=0), db_path=путь, sleep=lambda _: None)
+    первый.complete("а", СООБЩЕНИЕ, temperature=0.1)
+    второй = LLMGateway(Сбойный(падений=0), db_path=путь, sleep=lambda _: None)
+    второй.complete("а", СООБЩЕНИЕ, temperature=0.2)   # другие параметры: кэш не сработает
+    assert второй.stats()["calls"] == 1 and второй.stats()["tokens_in"] == 100
+    assert второй.stats(весь_журнал=True)["calls"] == 2
