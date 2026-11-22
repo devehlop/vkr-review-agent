@@ -8,7 +8,9 @@
 пробелов) входить в цитату с указанным номером. Выдуманные цитаты отбрасываются,
 рекомендация без единой настоящей цитаты в результат не попадает (FR-17).
 
-Рекомендации по сильным сторонам (вторая часть FR-13) будут отдельной функцией.
+Рекомендации по сильным сторонам (вторая часть FR-13) идут через тот же генератор
+с другим промптом (strengths_v1): тема, которую хвалят, оформляется как Проблема
+с позитивными цитатами, а Контекст.kind = "strength" (см. pipeline/strengths.py).
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ from review_agent.pipeline.issues import Проблема
 from review_agent.prompts import загрузить_промпт
 
 ВЕРСИЯ_ПРОМПТА = "recommend_v1"
+ВЕРСИЯ_ПРОМПТА_СИЛЬНЫХ = "strengths_v1"
 ТИПЫ = ("товар", "упаковка", "карточка товара", "размерная сетка", "логистика")
 НЕТ_КОНКУРЕНТОВ = "нет данных"
 
@@ -57,6 +60,7 @@ class Рекомендация:
     quotes: list[str]             # проверенные фрагменты цитат
     review_ids: list[str] = field(default_factory=list)   # отзывы проблемы (для шага 11)
     dropped_quotes: int = 0       # сколько цитат модели не нашлось в тексте
+    kind: str = "problem"         # "problem" или "strength" (что подчеркнуть в карточке)
 
 
 @dataclass
@@ -67,6 +71,8 @@ class Контекст:
     total_reviews: int
     negative_share: float | None = None      # доля негатива по атрибуту (шаг 5)
     competitors: str = НЕТ_КОНКУРЕНТОВ        # резюме сравнения (шаг 7)
+    kind: str = "problem"                     # "strength": problem — тема, которую хвалят
+    positive_share: float | None = None       # доля позитива по атрибуту (для сильных сторон)
 
     def цитаты(self) -> str:
         return "\n".join(f"{i}. {ц}" for i, ц in enumerate(self.problem.quotes, 1))
@@ -74,9 +80,11 @@ class Контекст:
     def поля(self) -> dict:
         п = self.problem
         доля = "нет данных" if self.negative_share is None else f"{self.negative_share:.0%}"
+        позитив = "нет данных" if self.positive_share is None else f"{self.positive_share:.0%}"
         return {"категория": self.category, "проблема": п.title, "атрибут": п.attribute,
                 "отзывов": п.reviews, "всего": self.total_reviews, "охват": f"{п.coverage:.0%}",
-                "доля_негатива": доля, "конкуренты": self.competitors, "цитаты": self.цитаты()}
+                "доля_негатива": доля, "доля_позитива": позитив, "конкуренты": self.competitors,
+                "цитаты": self.цитаты()}
 
 
 def _ключ(текст: str) -> str:
@@ -109,7 +117,8 @@ def сгенерировать(шлюз: LLMGateway, контекст: Конт�
     """
     п = контекст.problem
     сколько = "одно действие" if количество == 1 else f"{количество} действия"
-    промпт = загрузить_промпт(ВЕРСИЯ_ПРОМПТА).format(
+    версия = ВЕРСИЯ_ПРОМПТА_СИЛЬНЫХ if контекст.kind == "strength" else ВЕРСИЯ_ПРОМПТА
+    промпт = загрузить_промпт(версия).format(
         **контекст.поля(), типы=", ".join(ТИПЫ), количество=сколько,
         доработка=f"\n{доработка}\n" if доработка else "")
     r = шлюз.complete("recommend", [Message("user", промпт)], schema=СХЕМА,
@@ -123,6 +132,6 @@ def сгенерировать(шлюз: LLMGateway, контекст: Конт�
             problem=п.title, attribute=п.attribute, action=д["action"].strip(), type=д["type"],
             rationale=д["rationale"].strip(), expected_effect=д.get("expected_effect", "").strip(),
             effort=д["effort"], quotes=цитаты, review_ids=list(п.review_ids),
-            dropped_quotes=отброшено))
+            dropped_quotes=отброшено, kind=контекст.kind))
     return итог
 
