@@ -103,31 +103,6 @@ def _разобрать_json(text: str) -> tuple[Any, bool]:
         return json.loads(починить_скобки(text)), True
 
 
-class LLMGatewayError(RuntimeError):
-    """Все попытки исчерпаны. Вызывающий код может пропустить запись и идти дальше."""
-
-
-@dataclass
-class GatewayResult:
-    text: str
-    data: Any = None          # разобранный JSON, если передана схема
-    from_cache: bool = False
-
-
-_СХЕМА_БД = """
-CREATE TABLE IF NOT EXISTS llm_cache (
-    key TEXT PRIMARY KEY, text TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS llm_call (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ts REAL NOT NULL, step TEXT NOT NULL, model TEXT NOT NULL,
-    tokens_in INTEGER NOT NULL, tokens_out INTEGER NOT NULL,
-    cost REAL NOT NULL, latency REAL NOT NULL,
-    from_cache INTEGER NOT NULL, ok INTEGER NOT NULL, error TEXT
-);
-"""
-
-
 class LLMGateway:
     def __init__(self, client: LLMClient, *, db_path: str = ":memory:",
                  max_retries: int = 3, backoff: float = 1.0,
