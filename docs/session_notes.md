@@ -134,3 +134,12 @@ python scripts/run_issues.py    data/synthetic_reviews.csv --product "Куртк
 python scripts/run_priority.py data/synthetic_reviews.csv --product "Куртка" --issues data/issues.json --recommendations data/recommendations.json --aggregate data/aggregate.csv
 ```
 - Дальше: шаг 12 (отчёт DOCX/PDF и интерфейс Streamlit), рекомендации по сильным сторонам, шаг 7.
+
+## 23.11.2026 — шаг 12, отчёт (ветка `claude/step-12-report`, сливать после PR #9)
+
+- `report/build.py` собирает отчёт из файлов шагов 5–11, модель не вызывается: в отчёт попадает только то, что прошло проверки шагов 9 и 11. `report/render.py` выводит одну и ту же структуру в Markdown и DOCX (python-docx; PDF сохраняется из Word или LibreOffice).
+- Разделы: кратко; рекомендации по приоритету (проблема, тип, сложность, приоритет и доля негатива, обоснование, эффект, цитаты); проблемы (до 3 цитат, отметка «рекомендация не получена»); сильные стороны (тот же отбор, что на шаге 8 в PR #10: не меньше 3 упоминаний, позитива не меньше 60 %, без характеристик с проблемами; совет для карточки, если он есть в `recommendations.json`); таблица характеристик своего товара; приложение с отклонёнными критиком и проверкой опоры.
+- Предупреждения: отзывов меньше 30, подозрительные отзывы, нет доли негатива, критик выключен.
+- **Находка:** в `data/issues.json` цитаты проблем повторяются («Коробка помята» четыре раза). Файл, видимо, получен до исправления «цитаты без повторов» на шаге 6. Отчёт убирает повторы сам, но шаг 6 стоит перезапустить.
+- Запуск: `python scripts/run_report.py data/synthetic_reviews.csv --product "Куртка" --aggregate data/aggregate.csv --issues data/issues.json --prioritized data/prioritized.json --recommendations data/recommendations.json` → `data/report.md` и `data/report.docx`.
+- Дальше: интерфейс Streamlit (отдельная ветка поверх этой).
