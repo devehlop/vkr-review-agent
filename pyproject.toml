@@ -2,7 +2,13 @@
 name = "review-agent"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["requests", "jsonschema", "openpyxl", "razdel", "numpy"]
+dependencies = ["requests", "jsonschema", "openpyxl", "razdel", "numpy", "python-docx"]
+
+[project.optional-dependencies]
+# веб-интерфейс: streamlit run app/streamlit_app.py
+ui = ["streamlit", "pandas"]
+# локальные эмбеддинги для шага 6
+local-embeddings = ["sentence-transformers"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
