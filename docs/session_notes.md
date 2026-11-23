@@ -143,3 +143,13 @@ python scripts/run_priority.py data/synthetic_reviews.csv --product "Куртк�
 - **Находка:** в `data/issues.json` цитаты проблем повторяются («Коробка помята» четыре раза). Файл, видимо, получен до исправления «цитаты без повторов» на шаге 6. Отчёт убирает повторы сам, но шаг 6 стоит перезапустить.
 - Запуск: `python scripts/run_report.py data/synthetic_reviews.csv --product "Куртка" --aggregate data/aggregate.csv --issues data/issues.json --prioritized data/prioritized.json --recommendations data/recommendations.json` → `data/report.md` и `data/report.docx`.
 - Дальше: интерфейс Streamlit (отдельная ветка поверх этой).
+
+## 23.11.2026 — шаг 12, интерфейс (ветка `claude/step-12-interface`, сливать после PR отчёта)
+
+- `pipeline/run_all.py`: `запустить_анализ` вызывает шаги 2–12 подряд в памяти; `сохранить` пишет результаты в те же файлы, что скрипты (`taxonomy.json`, `mentions.json`, `aggregate.csv`, `issues.json`, `recommendations.json`, `prioritized.json`, `report.md`, `report.docx`); `открыть_сохранённое` строит отчёт по файлам без модели, шаги 10–11 пересчитывает сам.
+- `app/streamlit_app.py`, запуск `streamlit run app/streamlit_app.py` (нужно `pip install streamlit pandas`):
+  - «Новый анализ»: файл отзывов (или пример `data/synthetic_reviews.csv`), категория, справочник (составит модель или готовый `data/taxonomy*.json`), критик, эмбеддинги (локальные или GigaChat), порог кластеризации. Ключ берётся из `GIGACHAT_CREDENTIALS`, как у скриптов; в интерфейсе поля для ключа нет. Результаты сохраняются в `runs/<дата>_<товар>/` (папка в `.gitignore`: там тексты отзывов).
+  - «Открыть результаты»: папка из `runs/` или `data/` с `issues.json` и `aggregate.csv`, модель не нужна.
+  - Разделы: рекомендации, проблемы, сильные стороны, характеристики (таблица и диаграмма), журнал (отклонённые, расход модели, итоги предобработки, справочник). Скачивание DOCX и Markdown.
+- Проверено в браузере с заглушками модели и эмбеддингов (`tests/scripted_model.py`, `FakeEmbedder`): оба режима, все разделы, ошибок нет.
+- Не сделано: отзывы конкурентов в интерфейсе (ждёт шага 7), советы по сильным сторонам (ждут PR #10), правка справочника в интерфейсе, вопросы агенту.
